@@ -14,7 +14,6 @@ public class AccountServiceImpl implements AccountService {
         this.accountRepository = accountRepository;
     }
 
-
     @Override
     public AccountDto createAccount(AccountDto accountDto) {
         return null;
