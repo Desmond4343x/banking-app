@@ -1,6 +1,8 @@
 package net.desmond.bankingApp.service.impl;
 
 import net.desmond.bankingApp.dto.AccountDto;
+import net.desmond.bankingApp.entity.Account;
+import net.desmond.bankingApp.mapper.AccountMapper;
 import net.desmond.bankingApp.repository.AccountRepository;
 import net.desmond.bankingApp.service.AccountService;
 import org.springframework.stereotype.Service;
@@ -16,6 +18,8 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDto createAccount(AccountDto accountDto) {
-        return null;
+        Account account = AccountMapper.mapToAccount(accountDto);
+        Account savedAccount = accountRepository.save(account);
+        return AccountMapper.mapToAccountDto(savedAccount);
     }
 }
