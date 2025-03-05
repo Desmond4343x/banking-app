@@ -3,12 +3,11 @@ package net.desmond.bankingApp.controller;
 import net.desmond.bankingApp.dto.AccountDto;
 import net.desmond.bankingApp.service.AccountService;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@RestController
-@RequestMapping("/api/account")
+@RestController //ensures JSON response
+@RequestMapping("/api/accounts")
 public class AccountController {
 
     private AccountService accountService;
@@ -27,6 +26,14 @@ public class AccountController {
     public ResponseEntity<String> test() {
         return ResponseEntity.ok("API is working");
     }
+
+    //get account rest api
+    @GetMapping("/{id}")
+    public ResponseEntity<AccountDto> getAccountById(@PathVariable Long id){
+        AccountDto foundAccount = accountService.getAccountById(id);
+        return ResponseEntity.ok(foundAccount);
+    }
+
 
 
 }

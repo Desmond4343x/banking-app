@@ -18,8 +18,15 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDto createAccount(AccountDto accountDto) {
-        Account account = AccountMapper.mapToAccount(accountDto);
-        Account savedAccount = accountRepository.save(account);
+        Account account = AccountMapper.mapToAccount(accountDto); //mapper required as jpa methods only take @entity
+        Account savedAccount = accountRepository.save(account); //save method present in jpaRepo which accRepo inherits, default methods
         return AccountMapper.mapToAccountDto(savedAccount);
+    }
+
+    @Override
+    public AccountDto getAccountById(Long id) {
+        Account foundAccount = accountRepository.findById(id)
+                .orElseThrow(()-> new RuntimeException("Account does not exist"));
+        return AccountMapper.mapToAccountDto(foundAccount);
     }
 }
