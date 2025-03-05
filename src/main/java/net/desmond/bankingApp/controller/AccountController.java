@@ -18,7 +18,7 @@ public class AccountController {
 
     //add account rest api
     @PostMapping
-    public ResponseEntity<AccountDto> addAccount(@RequestBody AccountDto accountDto){
+    public ResponseEntity<AccountDto> addAccount(@RequestBody AccountDto accountDto){ //automatically spring converts json to java object
         return new ResponseEntity<>(accountService.createAccount(accountDto), HttpStatus.CREATED);
     }
 
@@ -34,7 +34,19 @@ public class AccountController {
         return ResponseEntity.ok(foundAccount);
     }
 
+    //deposit amount rest api
+    @PutMapping("/{id}/deposit/{amount}")
+    public ResponseEntity<AccountDto> depositAmount(@PathVariable Long id, @PathVariable double amount){
+        AccountDto depositedAccount = accountService.depositAmount(id,amount);
+        return ResponseEntity.ok(depositedAccount);
+    }
 
+    //withdraw amount rest api
+    @PutMapping("/{id}/withdraw/{amount}")
+    public ResponseEntity<AccountDto> withdrawAmount(@PathVariable Long id, @PathVariable double amount){
+        AccountDto withdrawedAccount = accountService.withdrawAmount(id,amount);
+        return ResponseEntity.ok(withdrawedAccount);
+    }
 
 }
 
