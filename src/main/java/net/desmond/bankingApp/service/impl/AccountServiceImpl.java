@@ -9,6 +9,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Service
 public class AccountServiceImpl implements AccountService {
 
@@ -52,7 +55,24 @@ public class AccountServiceImpl implements AccountService {
             foundAccount.setBalance(foundAccount.getBalance() - amount);
             return AccountMapper.mapToAccountDto(accountRepository.save(foundAccount));
         }
+    }
 
+    @Override
+    public List<AccountDto> getAllAccounts() {
+        List<Account> accounts = accountRepository.findAll();
+        List<AccountDto> accountDtos = new ArrayList<>();
+        for(Account ac : accounts){
+            accountDtos.add(AccountMapper.mapToAccountDto(ac));
+        }
+        return accountDtos;
+    }
+
+    @Override
+    public void deleteAccountById(Long id) {
+        Account foundAccount = accountRepository.findById(id)
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist"));
+
+        accountRepository.deleteById(id);
     }
 
 
