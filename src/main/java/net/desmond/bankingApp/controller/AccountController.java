@@ -6,6 +6,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController //ensures JSON response
 @RequestMapping("/api/accounts")
 public class AccountController {
@@ -20,11 +22,6 @@ public class AccountController {
     @PostMapping
     public ResponseEntity<AccountDto> addAccount(@RequestBody AccountDto accountDto){ //automatically spring converts json to java object
         return new ResponseEntity<>(accountService.createAccount(accountDto), HttpStatus.CREATED);
-    }
-
-    @GetMapping
-    public ResponseEntity<String> test() {
-        return ResponseEntity.ok("API is working");
     }
 
     //get account rest api
@@ -46,6 +43,19 @@ public class AccountController {
     public ResponseEntity<AccountDto> withdrawAmount(@PathVariable Long id, @PathVariable double amount){
         AccountDto withdrawedAccount = accountService.withdrawAmount(id,amount);
         return ResponseEntity.ok(withdrawedAccount);
+    }
+
+    //get All rest api
+    @GetMapping
+    public ResponseEntity<List<AccountDto>> getAllAccount(){
+        return ResponseEntity.ok(accountService.getAllAccounts());
+    }
+
+    //delete rest api
+    @DeleteMapping("/{id}/delete")
+    public ResponseEntity<String> deleteAccountById(@PathVariable Long id){
+        accountService.deleteAccountById(id);
+        return ResponseEntity.ok("Account deleted successfully!");
     }
 
 }
