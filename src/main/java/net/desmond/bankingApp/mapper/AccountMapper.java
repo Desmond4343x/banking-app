@@ -1,26 +1,33 @@
 package net.desmond.bankingApp.mapper;
 
 import net.desmond.bankingApp.dto.AccountDto;
+import net.desmond.bankingApp.encryption.EncryptionUtil;
 import net.desmond.bankingApp.entity.Account;
+import net.desmond.bankingApp.entity.AccountDetails;
 
 public class AccountMapper {
 
     public static Account mapToAccount(AccountDto accountDto){
-        Account account = new Account(
-                accountDto.getId(),
+        AccountDetails accountDetails = new AccountDetails(
                 accountDto.getAccountHolderName(),
                 accountDto.getBalance()
         );
-        return  account;
+
+        return new Account(
+                accountDto.getId(),
+                accountDetails
+        );
     }
 
     public static AccountDto mapToAccountDto(Account account){
-        AccountDto accountDto = new AccountDto(
-                account.getId(),
-                account.getAccountHolderName(),
-                account.getBalance()
-        );
+        AccountDetails details = account.getAccountDetails();
 
-        return accountDto;
+        return new AccountDto(
+                account.getId(),
+                details.getAccountHolderName(),
+                details.getBalance()
+        );
     }
 }
+
+

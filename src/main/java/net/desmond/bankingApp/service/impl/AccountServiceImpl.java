@@ -22,9 +22,18 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
-    public AccountDto createAccount(AccountDto accountDto) {
-        Account account = AccountMapper.mapToAccount(accountDto); //mapper required as jpa methods only take @entity
-        Account savedAccount = accountRepository.save(account); //save method present in jpaRepo which accRepo inherits, default methods
+    public AccountDto createAccount(AccountDto accountDto) { //accountDto direct from user, json
+        Account account = AccountMapper.mapToAccount(accountDto);
+
+        //generate and assign keys in account
+        //generate aes, encrypt and assign
+        account.setAesEncryptedKey("ily2");
+        account.setRsaPublicKey("rsaily3");
+        //create cred db, add password (hashed), generate pvt key and assign
+        //encrypt data then modify in account
+
+        Account savedAccount = accountRepository.save(account);
+
         return AccountMapper.mapToAccountDto(savedAccount);
     }
 
@@ -40,7 +49,7 @@ public class AccountServiceImpl implements AccountService {
         Account foundAccount = accountRepository.findById(id)
                 .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist"));
 
-        foundAccount.setBalance(foundAccount.getBalance()+amount);
+        foundAccount.getAccountDetails().setBalance(foundAccount.getAccountDetails().getBalance()+amount);
         return AccountMapper.mapToAccountDto(accountRepository.save(foundAccount));
     }
 
@@ -49,10 +58,10 @@ public class AccountServiceImpl implements AccountService {
         Account foundAccount = accountRepository.findById(id)
                 .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist"));
 
-        if (foundAccount.getBalance() < amount) {
+        if (foundAccount.getAccountDetails().getBalance() < amount) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient Balance");
         }else {
-            foundAccount.setBalance(foundAccount.getBalance() - amount);
+            foundAccount.getAccountDetails().setBalance(foundAccount.getAccountDetails().getBalance() - amount);
             return AccountMapper.mapToAccountDto(accountRepository.save(foundAccount));
         }
     }

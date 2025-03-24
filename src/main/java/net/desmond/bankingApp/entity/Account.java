@@ -15,40 +15,47 @@ public class Account {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name="account_holder_name")
-    private String accountHolderName;
-    private double balance;
+    @Embedded
+    private AccountDetails accountDetails; // Name and Balance are grouped here
+
+    @Column(name = "aes_encrypted_key")
+    private String aesEncryptedKey;
+
+    @Column(name = "rsa_public_key", columnDefinition = "TEXT")
+    private String rsaPublicKey;
+
+    public Account() {}
+
+    public Account(Long id, AccountDetails accountDetails) {
+        this.id = id;
+        this.accountDetails = accountDetails;
+    }
 
     public Long getId() {
         return id;
     }
 
-    public String getAccountHolderName() {
-        return accountHolderName;
+    public AccountDetails getAccountDetails() {
+        return accountDetails;
     }
 
-    public double getBalance() {
-        return balance;
+    public String getAesEncryptedKey() {
+        return aesEncryptedKey;
     }
 
-    public Account() {
+    public String getRsaPublicKey() {
+        return rsaPublicKey;
     }
 
-    public void setId(Long id) {
-        this.id = id;
+    public void setAccountDetails(AccountDetails accountDetails) {
+        this.accountDetails = accountDetails;
     }
 
-    public void setAccountHolderName(String accountHolderName) {
-        this.accountHolderName = accountHolderName;
+    public void setAesEncryptedKey(String aesEncryptedKey) {
+        this.aesEncryptedKey = aesEncryptedKey;
     }
 
-    public void setBalance(double balance) {
-        this.balance = balance;
-    }
-
-    public Account(Long id, String accountHolderName, double balance) {
-        this.id = id;
-        this.accountHolderName = accountHolderName;
-        this.balance = balance;
+    public void setRsaPublicKey(String rsaPublicKey) {
+        this.rsaPublicKey = rsaPublicKey;
     }
 }
