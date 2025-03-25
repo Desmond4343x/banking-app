@@ -3,9 +3,10 @@ package net.desmond.bankingApp.service;
 import net.desmond.bankingApp.dto.AccountDto;
 
 import java.util.List;
+import java.util.Map;
 
 public interface AccountService {
-    AccountDto createAccount(AccountDto accountDto);
+    AccountDto createAccount(Map<String, Object> requestData);
 
     AccountDto getAccountById(Long id);
 

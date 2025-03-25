@@ -1,9 +1,8 @@
-package net.desmond.bankingApp.encryption;
+package net.desmond.bankingApp.utils;
 
 import javax.crypto.Cipher;
 import javax.crypto.KeyGenerator;
 import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
 import java.util.Base64;
 
 public class EncryptionUtil {

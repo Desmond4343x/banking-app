@@ -1,7 +1,6 @@
 package net.desmond.bankingApp.mapper;
 
 import net.desmond.bankingApp.dto.AccountDto;
-import net.desmond.bankingApp.encryption.EncryptionUtil;
 import net.desmond.bankingApp.entity.Account;
 import net.desmond.bankingApp.entity.AccountDetails;
 

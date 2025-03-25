@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController //ensures JSON response
 @RequestMapping("/api/accounts")
@@ -20,8 +21,8 @@ public class AccountController {
 
     //add account rest api
     @PostMapping
-    public ResponseEntity<AccountDto> addAccount(@RequestBody AccountDto accountDto){ //automatically spring converts json to java object
-        return new ResponseEntity<>(accountService.createAccount(accountDto), HttpStatus.CREATED);
+    public ResponseEntity<AccountDto> addAccount(@RequestBody Map<String, Object> requestData) {
+        return new ResponseEntity<>(accountService.createAccount(requestData), HttpStatus.CREATED);
     }
 
     //get account rest api

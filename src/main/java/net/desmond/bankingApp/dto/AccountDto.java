@@ -34,6 +34,9 @@ public class AccountDto {
         this.balance = balance;
     }
 
+    public AccountDto() {
+    }
+
     public AccountDto(Long id, String accountHolderName, double balance) {
         this.id = id;
         this.accountHolderName = accountHolderName;
