@@ -3,11 +3,13 @@ package net.desmond.bankingApp.service.impl;
 import net.desmond.bankingApp.dto.AccountDto;
 import net.desmond.bankingApp.entity.Account;
 import net.desmond.bankingApp.entity.AccountCred;
+import net.desmond.bankingApp.entity.AccountDetails;
 import net.desmond.bankingApp.mapper.AccountMapper;
 import net.desmond.bankingApp.repository.AccountRepository;
 import net.desmond.bankingApp.secureVault.AccountCredRepository;
 import net.desmond.bankingApp.service.AccountService;
 import net.desmond.bankingApp.utils.EncryptionUtil;
+import net.desmond.bankingApp.utils.HashingUtil;
 import net.desmond.bankingApp.utils.KeyGeneratorUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -15,12 +17,9 @@ import org.springframework.web.server.ResponseStatusException;
 
 import javax.crypto.SecretKey;
 import java.security.KeyPair;
-import java.security.KeyPairGenerator;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.SecureRandom;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +27,7 @@ import java.util.Map;
 public class AccountServiceImpl implements AccountService {
 
     private AccountRepository accountRepository;
-    private AccountCredRepository accountCredRepository;
+    private AccountCredRepository accountCredRepository; //can be considered the only dependency for decrypting everything, as without this whole data cannot be accessed.
 
     public AccountServiceImpl(AccountRepository accountRepository,AccountCredRepository accountCredRepository) {
         this.accountRepository = accountRepository;
@@ -37,12 +36,12 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDto createAccount(Map<String, Object> requestData) throws Exception { //map of data from user, converted to accountDto
-        String accountHolderName = (String) requestData.get("accountHolderName");
-        double balance = Double.parseDouble(requestData.get("balance").toString());
+        String accountHolderName = requestData.get("accountHolderName").toString();
+        String balance = requestData.get("balance").toString();
 
         AccountDto accountDto = new AccountDto();
         accountDto.setAccountHolderName(accountHolderName);
-        accountDto.setBalance(balance);
+        accountDto.setBalance(Double.valueOf(balance));
 
         //x---x---x--x---x--- till here only user entered data DTO data formatting
 
@@ -67,7 +66,9 @@ public class AccountServiceImpl implements AccountService {
 
         AccountCred accountCred = new AccountCred();
         accountCred.setId(savedAccount.getId());
-        accountCred.setHashedUserPassword(password); //not hashed yet
+
+        accountCred.setHashedUserPassword(HashingUtil.hashPassword(password, HashingUtil.generateSalt()));
+
         accountCred.setRsaPrivateKey(KeyGeneratorUtil.encodeKeyToBase64(privateKey));
         accountCredRepository.save(accountCred);
 
@@ -92,8 +93,13 @@ public class AccountServiceImpl implements AccountService {
         Account foundAccount = accountRepository.findById(id)
                 .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist"));
 
-        foundAccount.getAccountDetails().setBalance(foundAccount.getAccountDetails().getBalance()+amount);
-        return AccountMapper.mapToAccountDto(AccountMapper.mapToDecryptedAccount(accountRepository.save(foundAccount),accountCredRepository));
+        Account decryptedAccount = AccountMapper.mapToDecryptedAccount(foundAccount,accountCredRepository);
+        double curAmount = Double.valueOf(decryptedAccount.getAccountDetails().getBalance());
+        curAmount+=amount;
+        decryptedAccount.setAccountDetails(new AccountDetails(decryptedAccount.getAccountDetails().getAccountHolderName(),String.valueOf(curAmount)));
+
+        Account encryptedAccount = AccountMapper.mapToEncryptedAccount(decryptedAccount,accountCredRepository);
+        return AccountMapper.mapToAccountDto(AccountMapper.mapToDecryptedAccount(accountRepository.save(encryptedAccount),accountCredRepository));
     }
 
     @Override
@@ -101,11 +107,17 @@ public class AccountServiceImpl implements AccountService {
         Account foundAccount = accountRepository.findById(id)
                 .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist"));
 
-        if (foundAccount.getAccountDetails().getBalance() < amount) {
+        Account decryptedAccount = AccountMapper.mapToDecryptedAccount(foundAccount,accountCredRepository);
+        double curAmount = Double.valueOf(decryptedAccount.getAccountDetails().getBalance());
+
+        if (curAmount < amount) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient Balance");
         }else {
-            foundAccount.getAccountDetails().setBalance(foundAccount.getAccountDetails().getBalance() - amount);
-            return AccountMapper.mapToAccountDto(AccountMapper.mapToDecryptedAccount(accountRepository.save(foundAccount),accountCredRepository));
+            curAmount-=amount;
+            decryptedAccount.setAccountDetails(new AccountDetails(decryptedAccount.getAccountDetails().getAccountHolderName(),String.valueOf(curAmount)));
+
+            Account encryptedAccount = AccountMapper.mapToEncryptedAccount(decryptedAccount,accountCredRepository);
+            return AccountMapper.mapToAccountDto(AccountMapper.mapToDecryptedAccount(accountRepository.save(encryptedAccount),accountCredRepository));
         }
     }
 

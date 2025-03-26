@@ -16,7 +16,7 @@ public class AccountMapper {
     public static Account mapToAccount(AccountDto accountDto){
         AccountDetails accountDetails = new AccountDetails(
                 accountDto.getAccountHolderName(),
-                accountDto.getBalance()
+                String.valueOf(accountDto.getBalance())
         );
 
         return new Account(
@@ -31,7 +31,7 @@ public class AccountMapper {
         return new AccountDto(
                 account.getId(),
                 details.getAccountHolderName(),
-                details.getBalance()
+                Double.valueOf(details.getBalance())
         );
     }
 
@@ -45,11 +45,11 @@ public class AccountMapper {
 
         //encrypt
         String encryptedName = EncryptionUtil.encryptWithAES(account.getAccountDetails().getAccountHolderName(), aesKey);
-        //String encryptedBalance = EncryptionUtil.encryptWithAES(String.valueOf(account.getAccountDetails().getBalance()), aesKey);
+        String encryptedBalance = EncryptionUtil.encryptWithAES(account.getAccountDetails().getBalance(), aesKey);
 
         //assign values
         encryptedAccount.setId(account.getId());
-        encryptedAccount.setAccountDetails(new AccountDetails(encryptedName,account.getAccountDetails().getBalance()));
+        encryptedAccount.setAccountDetails(new AccountDetails(encryptedName,encryptedBalance));
         encryptedAccount.setAesEncryptedKey(account.getAesEncryptedKey());
         encryptedAccount.setRsaPublicKey(account.getRsaPublicKey());
 
@@ -66,11 +66,11 @@ public class AccountMapper {
 
         //decrypt
         String decryptedName = EncryptionUtil.decryptWithAES(account.getAccountDetails().getAccountHolderName(), aesKey);
-        //String encryptedBalance = EncryptionUtil.encryptWithAES(String.valueOf(account.getAccountDetails().getBalance()), aesKey);
+        String decryptedBalance = EncryptionUtil.decryptWithAES(account.getAccountDetails().getBalance(), aesKey);
 
         //assign values
         decryptedAccount.setId(account.getId());
-        decryptedAccount.setAccountDetails(new AccountDetails(decryptedName,account.getAccountDetails().getBalance()));
+        decryptedAccount.setAccountDetails(new AccountDetails(decryptedName,decryptedBalance));
         decryptedAccount.setAesEncryptedKey(account.getAesEncryptedKey());
         decryptedAccount.setRsaPublicKey(account.getRsaPublicKey());
 

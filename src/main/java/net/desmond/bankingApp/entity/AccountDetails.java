@@ -14,11 +14,11 @@ public class AccountDetails {
     private String accountHolderName;
 
     @Column(name = "account_balance")
-    private double balance;
+    private String balance;
 
     public AccountDetails() {}
 
-    public AccountDetails(String accountHolderName, double balance) {
+    public AccountDetails(String accountHolderName, String balance) {
         this.accountHolderName = accountHolderName;
         this.balance = balance;
     }
@@ -31,11 +31,11 @@ public class AccountDetails {
         this.accountHolderName = accountHolderName;
     }
 
-    public double getBalance() {
+    public String getBalance() {
         return balance;
     }
 
-    public void setBalance(double balance) {
+    public void setBalance(String balance) {
         this.balance = balance;
     }
 
