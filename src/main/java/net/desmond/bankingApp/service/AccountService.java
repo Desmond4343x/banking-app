@@ -6,15 +6,15 @@ import java.util.List;
 import java.util.Map;
 
 public interface AccountService {
-    AccountDto createAccount(Map<String, Object> requestData);
+    AccountDto createAccount(Map<String, Object> requestData) throws Exception;
 
-    AccountDto getAccountById(Long id);
+    AccountDto getAccountById(Long id) throws Exception;
 
-    AccountDto depositAmount(Long id, double amount);
+    AccountDto depositAmount(Long id, double amount) throws Exception;
 
-    AccountDto withdrawAmount(Long id, double amount);
+    AccountDto withdrawAmount(Long id, double amount) throws Exception;
 
-    List<AccountDto> getAllAccounts();
+    List<AccountDto> getAllAccounts() throws Exception;
 
     void deleteAccountById(Long id);
 }
