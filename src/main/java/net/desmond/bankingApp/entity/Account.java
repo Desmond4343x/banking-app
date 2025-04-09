@@ -12,10 +12,19 @@ import lombok.Setter;
 public class Account {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    private Long accountId;
 
-    @Embedded
-    private AccountDetails accountDetails; // Name and Balance are grouped here
+    @Column(name = "account_holder_name")
+    private String accountHolderName;
+
+    @Column(name = "account_balance")
+    private String balance;
+
+    @Column(name = "account_holder_address")
+    private String accountHolderAddress;
+
+    @Column(name = "account_holder_email_address")
+    private String accountHolderEmailAddress;
 
     @Column(name = "aes_encrypted_key", columnDefinition = "TEXT")
     private String aesEncryptedKey;
@@ -25,45 +34,72 @@ public class Account {
 
     public Account() {}
 
+    public Account(Long accountId, String accountHolderName, String balance, String accountHolderAddress, String accountHolderEmailAddress) {
+        this.accountId = accountId;
+        this.accountHolderName = accountHolderName;
+        this.balance = balance;
+        this.accountHolderAddress = accountHolderAddress;
+        this.accountHolderEmailAddress = accountHolderEmailAddress;
+    }
+
     public Account(Account account) {
-        this.id = account.id;
-        this.accountDetails = new AccountDetails(
-                account.accountDetails.getAccountHolderName(),
-                account.accountDetails.getBalance()
-        );
-        this.aesEncryptedKey = account.aesEncryptedKey;
-        this.rsaPublicKey = account.rsaPublicKey;
+        this.accountId =account.getAccountId();
+        this.accountHolderAddress=account.getAccountHolderAddress();
+        this.accountHolderName=account.getAccountHolderName();
+        this.accountHolderEmailAddress=account.getAccountHolderEmailAddress();
+        this.balance=account.getBalance();
     }
 
-    public Account(Long id, AccountDetails accountDetails) {
-        this.id = id;
-        this.accountDetails = accountDetails;
+    public Long getAccountId() {
+        return accountId;
     }
 
-    public Long getId() {
-        return id;
+    public void setAccountId(Long accountId) {
+        this.accountId = accountId;
     }
 
-    public void setId(Long id) { this.id = id;}
+    public String getAccountHolderName() {
+        return accountHolderName;
+    }
 
-    public AccountDetails getAccountDetails() {
-        return accountDetails;
+    public void setAccountHolderName(String accountHolderName) {
+        this.accountHolderName = accountHolderName;
+    }
+
+    public String getBalance() {
+        return balance;
+    }
+
+    public void setBalance(String balance) {
+        this.balance = balance;
+    }
+
+    public String getAccountHolderAddress() {
+        return accountHolderAddress;
+    }
+
+    public void setAccountHolderAddress(String accountHolderAddress) {
+        this.accountHolderAddress = accountHolderAddress;
+    }
+
+    public String getAccountHolderEmailAddress() {
+        return accountHolderEmailAddress;
+    }
+
+    public void setAccountHolderEmailAddress(String accountHolderEmailAddress) {
+        this.accountHolderEmailAddress = accountHolderEmailAddress;
     }
 
     public String getAesEncryptedKey() {
         return aesEncryptedKey;
     }
 
-    public String getRsaPublicKey() {
-        return rsaPublicKey;
-    }
-
-    public void setAccountDetails(AccountDetails accountDetails) {
-        this.accountDetails = accountDetails;
-    }
-
     public void setAesEncryptedKey(String aesEncryptedKey) {
         this.aesEncryptedKey = aesEncryptedKey;
+    }
+
+    public String getRsaPublicKey() {
+        return rsaPublicKey;
     }
 
     public void setRsaPublicKey(String rsaPublicKey) {

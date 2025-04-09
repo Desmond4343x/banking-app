@@ -1,6 +1,7 @@
 package net.desmond.bankingApp.service;
 
 import net.desmond.bankingApp.dto.AccountDto;
+import net.desmond.bankingApp.transactions.TransactionDto;
 
 import java.util.List;
 import java.util.Map;
@@ -17,4 +18,13 @@ public interface AccountService {
     List<AccountDto> getAllAccounts() throws Exception;
 
     void deleteAccountById(Long id);
+
+    List<TransactionDto> getAllTransactions() throws Exception;
+
+    List<TransactionDto> getAllTransactionsSent(Long id) throws Exception;
+
+    List<TransactionDto> getAllTransactionsReceived(Long id) throws Exception;
+
+    AccountDto sendToAccount(Long senderId, Long receiverId, Double amount) throws Exception;
 }
+
