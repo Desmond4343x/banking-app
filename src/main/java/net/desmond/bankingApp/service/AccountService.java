@@ -21,10 +21,26 @@ public interface AccountService {
 
     List<TransactionDto> getAllTransactions() throws Exception;
 
+    List<TransactionDto> getAllTransactionsId(Long id) throws Exception;
+
     List<TransactionDto> getAllTransactionsSent(Long id) throws Exception;
 
     List<TransactionDto> getAllTransactionsReceived(Long id) throws Exception;
 
     AccountDto sendToAccount(Long senderId, Long receiverId, Double amount) throws Exception;
+
+    void requestFromAccount(Long receiverId, Long senderId, Double amount) throws Exception;
+
+    List<TransactionDto> getAllPendingTransactions() throws Exception;
+
+    List<TransactionDto> getUserPendingTransactions(Long id) throws Exception;
+
+    List<TransactionDto> getPendingSentTransactions(Long id) throws Exception;
+
+    List<TransactionDto> getPendingReceivedTransactions(Long id) throws Exception;
+
+    AccountDto executePendingTransaction(Long transId) throws Exception;
+
+    boolean matchPassword(Long id, String pass) throws Exception;
 }
 

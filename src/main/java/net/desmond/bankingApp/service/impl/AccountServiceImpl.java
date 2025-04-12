@@ -73,7 +73,7 @@ public class AccountServiceImpl implements AccountService {
         String password = (String) requestData.get("password");
         AccountCred accountCred = new AccountCred();
         accountCred.setId(savedAccount.getAccountId());
-        accountCred.setHashedUserPassword(HashingUtil.hashPassword(password, HashingUtil.generateSalt()));
+        accountCred.setHashedUserPassword(HashingUtil.hashPassword(password));
         accountCred.setRsaPrivateKey(KeyGeneratorUtil.encodeKeyToBase64(privateKey));
         accountCredRepository.save(accountCred);
 
@@ -160,7 +160,19 @@ public class AccountServiceImpl implements AccountService {
         List<Transaction> transactions = transactionRepository.findAll();
         List<TransactionDto> decryptedTransactions = new ArrayList<>();
         for(Transaction tr : transactions){
-            decryptedTransactions.add(Mapper.mapToTransactionDto(Mapper.mapToDecryptedTransaction(tr,accountCredRepository)));
+            decryptedTransactions.add(Mapper.mapToTransactionDto
+                    (Mapper.mapToDecryptedTransaction(tr,accountCredRepository)));
+        }
+        return decryptedTransactions;
+    }
+
+    @Override
+    public List<TransactionDto> getAllTransactionsId(Long id) throws Exception {
+        List<Transaction> transactions = transactionRepository.findTransactionById(id);
+        List<TransactionDto> decryptedTransactions = new ArrayList<>();
+        for(Transaction tr : transactions){
+            decryptedTransactions.add(Mapper.mapToTransactionDto
+                    (Mapper.mapToDecryptedTransaction(tr,accountCredRepository)));
         }
         return decryptedTransactions;
     }
@@ -170,7 +182,8 @@ public class AccountServiceImpl implements AccountService {
         List<Transaction> transactions = transactionRepository.findAllSent(id);
         List<TransactionDto> decryptedTransactions = new ArrayList<>();
         for(Transaction tr : transactions){
-            decryptedTransactions.add(Mapper.mapToTransactionDto(Mapper.mapToDecryptedTransaction(tr,accountCredRepository)));
+            decryptedTransactions.add(Mapper.mapToTransactionDto
+                    (Mapper.mapToDecryptedTransaction(tr,accountCredRepository)));
         }
         return decryptedTransactions;
     }
@@ -180,7 +193,8 @@ public class AccountServiceImpl implements AccountService {
         List<Transaction> transactions = transactionRepository.findAllReceived(id);
         List<TransactionDto> decryptedTransactions = new ArrayList<>();
         for(Transaction tr : transactions){
-            decryptedTransactions.add(Mapper.mapToTransactionDto(Mapper.mapToDecryptedTransaction(tr,accountCredRepository)));
+            decryptedTransactions.add(Mapper.mapToTransactionDto
+                    (Mapper.mapToDecryptedTransaction(tr,accountCredRepository)));
         }
         return decryptedTransactions;
     }
@@ -218,4 +232,114 @@ public class AccountServiceImpl implements AccountService {
             return Mapper.mapToAccountDto(Mapper.mapToDecryptedAccount(savedEncryptedAccount, accountCredRepository));
         }
     }
+
+    @Override
+    public void requestFromAccount(Long receiverId, Long senderId, Double amount) throws Exception{
+        Account receiver = accountRepository.findById(receiverId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receiver Account does not exist"));
+        Account sender = accountRepository.findById(senderId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sender Account does not exist"));
+
+        Transaction transaction = new Transaction(senderId, receiverId, String.valueOf(amount), "pending", sender.getAesEncryptedKey());
+        transactionRepository.save(Mapper.mapToEncryptedTransaction(transaction, accountCredRepository));
+    }
+
+    @Override
+    public List<TransactionDto> getAllPendingTransactions() throws Exception {
+        List<Transaction> transactions = transactionRepository.findAllPending();
+        List<TransactionDto> decryptedTransactions = new ArrayList<>();
+        for(Transaction tr : transactions){
+            decryptedTransactions.add(Mapper.mapToTransactionDto
+                    (Mapper.mapToDecryptedTransaction(tr,accountCredRepository)));
+        }
+        return decryptedTransactions;
+    }
+
+    @Override
+    public List<TransactionDto> getUserPendingTransactions(Long id) throws Exception {
+        List<Transaction> transactions = transactionRepository.findAllPendingByUser(id);
+        List<TransactionDto> decryptedTransactions = new ArrayList<>();
+        for(Transaction tr : transactions){
+            decryptedTransactions.add(Mapper.mapToTransactionDto
+                    (Mapper.mapToDecryptedTransaction(tr,accountCredRepository)));
+        }
+        return decryptedTransactions;
+    }
+
+    @Override
+    public List<TransactionDto> getPendingSentTransactions(Long id) throws Exception {
+        List<Transaction> transactions = transactionRepository.findAllPendingSentByUser(id);
+        List<TransactionDto> decryptedTransactions = new ArrayList<>();
+        for(Transaction tr : transactions){
+            decryptedTransactions.add(Mapper.mapToTransactionDto
+                    (Mapper.mapToDecryptedTransaction(tr,accountCredRepository)));
+        }
+        return decryptedTransactions;
+    }
+
+    @Override
+    public List<TransactionDto> getPendingReceivedTransactions(Long id) throws Exception {
+        List<Transaction> transactions = transactionRepository.findAllPendingReceivedByUser(id);
+        List<TransactionDto> decryptedTransactions = new ArrayList<>();
+        for(Transaction tr : transactions){
+            decryptedTransactions.add(Mapper.mapToTransactionDto
+                    (Mapper.mapToDecryptedTransaction(tr,accountCredRepository)));
+        }
+        return decryptedTransactions;
+    }
+
+    @Override
+    public AccountDto executePendingTransaction(Long transId) throws Exception {
+        Transaction transaction = transactionRepository.findById(transId)
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction does not exist"));
+
+        if (!transaction.getStatus().equals("pending")) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction is not pending");
+        }
+
+        Account receiver = accountRepository.findById(transaction.getReceiverId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receiver Account does not exist"));
+        Account sender = accountRepository.findById(transaction.getSenderId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sender Account does not exist"));
+
+        Account decryptedReceiver = Mapper.mapToDecryptedAccount(receiver, accountCredRepository);
+        Account decryptedSender = Mapper.mapToDecryptedAccount(sender, accountCredRepository);
+        Transaction decryptedTransaction = Mapper.mapToDecryptedTransaction(transaction,accountCredRepository);
+
+        double receiverBalance = Double.valueOf(decryptedReceiver.getBalance());
+        double senderBalance = Double.valueOf(decryptedSender.getBalance());
+        double amount = Double.valueOf(decryptedTransaction.getAmount());
+
+        if(amount>senderBalance){
+            Transaction failed = new Transaction(transaction.getSenderId(), transaction.getReceiverId(), String.valueOf(amount), "failed", sender.getAesEncryptedKey());
+            transactionRepository.save(Mapper.mapToEncryptedTransaction(failed, accountCredRepository));
+            transactionRepository.deleteById(transId);
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient Balance");
+        }else{
+            senderBalance -= amount;
+            receiverBalance += amount;
+            decryptedSender.setBalance(String.valueOf(senderBalance));
+            decryptedReceiver.setBalance(String.valueOf(receiverBalance));
+
+            Account encryptedSenderAccount = Mapper.mapToEncryptedAccount(decryptedSender, accountCredRepository);
+            Account encryptedReceiverAccount = Mapper.mapToEncryptedAccount(decryptedReceiver, accountCredRepository);
+
+            Transaction success = new Transaction(transaction.getSenderId(), transaction.getReceiverId(), String.valueOf(amount), "success", encryptedSenderAccount.getAesEncryptedKey());
+            transactionRepository.save(Mapper.mapToEncryptedTransaction(success, accountCredRepository));
+            transactionRepository.deleteById(transId);
+
+            Account savedEncryptedAccount = accountRepository.save(encryptedSenderAccount);
+            accountRepository.save(encryptedReceiverAccount);
+            return Mapper.mapToAccountDto(Mapper.mapToDecryptedAccount(savedEncryptedAccount, accountCredRepository));
+        }
+    }
+
+    @Override
+    public boolean matchPassword(Long id, String pass) throws Exception {
+        AccountCred acc = accountCredRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist"));
+
+        return HashingUtil.verifyPassword(pass,acc.getHashedUserPassword());
+    }
+
 }
