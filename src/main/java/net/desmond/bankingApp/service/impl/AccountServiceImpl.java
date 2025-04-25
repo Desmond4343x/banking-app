@@ -44,6 +44,7 @@ public class AccountServiceImpl implements AccountService {
         String balance = requestData.get("balance").toString();
         String accountHolderAddress = requestData.get("accountHolderAddress").toString();
         String accountHolderEmailAddress = requestData.get("accountHolderEmailAddress").toString();
+        String role = requestData.get("accountHolderRole").toString();
 
         AccountDto accountDto = new AccountDto();
         accountDto.setAccountHolderName(accountHolderName);
@@ -64,6 +65,7 @@ public class AccountServiceImpl implements AccountService {
         String encryptedAesKey = EncryptionUtil.encryptAESKeyWithRSA(aesKey, publicKey);
         account.setAesEncryptedKey(encryptedAesKey);
         account.setRsaPublicKey(KeyGeneratorUtil.encodeKeyToBase64(publicKey));
+        account.setRole(role);
         Account savedAccount = accountRepository.save(account);
         //acc saved unencrypted
 

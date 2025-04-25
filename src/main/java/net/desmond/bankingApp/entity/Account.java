@@ -32,6 +32,9 @@ public class Account {
     @Column(name = "rsa_public_key", columnDefinition = "TEXT")
     private String rsaPublicKey;
 
+    @Column(name = "role")
+    private String role;
+
     public Account() {}
 
     public Account(Long accountId, String accountHolderName, String balance, String accountHolderAddress, String accountHolderEmailAddress) {
@@ -104,5 +107,13 @@ public class Account {
 
     public void setRsaPublicKey(String rsaPublicKey) {
         this.rsaPublicKey = rsaPublicKey;
+    }
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
     }
 }

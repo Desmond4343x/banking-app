@@ -58,6 +58,7 @@ public class Mapper {
         encryptedAccount.setAccountHolderEmailAddress(encryptedEmailAddress);
         encryptedAccount.setAesEncryptedKey(account.getAesEncryptedKey());
         encryptedAccount.setRsaPublicKey(account.getRsaPublicKey());
+        encryptedAccount.setRole(account.getRole());
 
         return encryptedAccount;
     }
@@ -85,6 +86,7 @@ public class Mapper {
         decryptedAccount.setAccountHolderEmailAddress(decryptedEmailAddress);
         decryptedAccount.setAesEncryptedKey(account.getAesEncryptedKey());
         decryptedAccount.setRsaPublicKey(account.getRsaPublicKey());
+        decryptedAccount.setRole(account.getRole());
 
         return decryptedAccount;
     }

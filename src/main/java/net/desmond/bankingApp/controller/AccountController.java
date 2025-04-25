@@ -1,13 +1,19 @@
 package net.desmond.bankingApp.controller;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import net.desmond.bankingApp.dto.AccountDto;
+import net.desmond.bankingApp.entity.Account;
+import net.desmond.bankingApp.repository.AccountRepository;
 import net.desmond.bankingApp.service.AccountService;
 import net.desmond.bankingApp.transactions.TransactionDto;
+import net.desmond.bankingApp.utils.JwtUtil;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -16,9 +22,11 @@ import java.util.Map;
 public class AccountController {
 
     private AccountService accountService;
+    private AccountRepository accountRepository;
 
-    public AccountController(AccountService accountService) {
+    public AccountController(AccountService accountService,AccountRepository accountRepository) {
         this.accountService = accountService;
+        this.accountRepository = accountRepository;
     }
 
     //add account rest api
@@ -29,125 +37,467 @@ public class AccountController {
 
     //get account rest api
     @GetMapping("/accounts/{id}")
-    public ResponseEntity<AccountDto> getAccountById(@PathVariable Long id) throws Exception {
-        AccountDto foundAccount = accountService.getAccountById(id);
-        return ResponseEntity.ok(foundAccount);
+    public ResponseEntity<AccountDto> getAccountById(@RequestHeader(value = "Authorization", required = false) String token,
+                                                     @PathVariable Long id) throws Exception {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            Long jwtUserId = JwtUtil.extractUserId(jwt);
+            String role = JwtUtil.extractRole(jwt);
+
+            Long targetId = "user".equals(role) ? jwtUserId : id;
+            return ResponseEntity.ok(accountService.getAccountById(targetId));
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
+
 
     //deposit amount rest api
     @PutMapping("/accounts/deposit")
-    public ResponseEntity<AccountDto> depositAmount(@RequestBody Map<String, Object> request) throws Exception {
-        Long id = Long.valueOf(request.get("accountId").toString());
-        double amount = Double.parseDouble(request.get("amount").toString());
-        AccountDto depositedAccount = accountService.depositAmount(id, amount);
-        return ResponseEntity.ok(depositedAccount);
+    public ResponseEntity<AccountDto> depositAmount(@RequestHeader(value = "Authorization", required = false) String token,
+                                                     @RequestBody Map<String, Object> request) throws Exception {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            Long userId = JwtUtil.extractUserId(jwt);
+            double amount = Double.parseDouble(request.get("amount").toString());
+            AccountDto depositedAccount = accountService.depositAmount(userId, amount);
+            return ResponseEntity.ok(depositedAccount);
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
+
 
     //withdraw amount rest api
     @PutMapping("/accounts/withdraw")
-    public ResponseEntity<AccountDto> withdrawAmount(@RequestBody Map<String, Object> request) throws Exception {
-        Long id = Long.valueOf(request.get("accountId").toString());
-        double amount = Double.parseDouble(request.get("amount").toString());
-        AccountDto withdrawedAccount = accountService.withdrawAmount(id, amount);
-        return ResponseEntity.ok(withdrawedAccount);
+    public ResponseEntity<AccountDto> withdrawAmount(@RequestHeader(value = "Authorization", required = false) String token,
+                                                     @RequestBody Map<String, Object> request) throws Exception {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            Long userId = JwtUtil.extractUserId(jwt);
+            double amount = Double.parseDouble(request.get("amount").toString());
+            AccountDto withdrawedAccount = accountService.withdrawAmount(userId, amount);
+            return ResponseEntity.ok(withdrawedAccount);
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
+
 
     //get All accounts rest api
     @GetMapping("/accounts")
-    public ResponseEntity<List<AccountDto>> getAllAccount() throws Exception {
-        return ResponseEntity.ok(accountService.getAllAccounts());
+    public ResponseEntity<List<AccountDto>> getAllAccounts(@RequestHeader(value = "Authorization", required = false) String token) {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            String role = JwtUtil.extractRole(jwt);
+            if (!"admin".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body(null); // Forbidden if not an admin
+            }
+            return ResponseEntity.ok(accountService.getAllAccounts());
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
     }
+
 
     //delete rest api
     @DeleteMapping("/accounts/{id}")
-    public ResponseEntity<String> deleteAccountById(@PathVariable Long id){
-        accountService.deleteAccountById(id);
-        return ResponseEntity.ok("Account deleted successfully.");
+    public ResponseEntity<String> deleteAccountById(@RequestHeader(value = "Authorization", required = false) String token,
+                                                    @PathVariable Long id) {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            String role = JwtUtil.extractRole(jwt);
+            if (!"admin".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Not an Admin");
+            }
+            accountService.deleteAccountById(id);
+            return ResponseEntity.ok("Account deleted successfully.");
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired. Please login again.");
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token. Please login again.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
+        }
     }
+
 
     //see all transactions
     @GetMapping("/transactions")
-    public ResponseEntity<List<TransactionDto>> getAllTransactions() throws Exception {
-        return ResponseEntity.ok(accountService.getAllTransactions());
+    public ResponseEntity<?> getAllTransactions(@RequestHeader(value = "Authorization", required = false) String token) {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            String role = JwtUtil.extractRole(jwt);
+            if (!"admin".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Not an Admin");
+            }
+            return ResponseEntity.ok(accountService.getAllTransactions());
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired. Please login again.");
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token. Please login again.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
+        }
     }
+
 
     //see all trans user
     @GetMapping("/transactions/{id}")
-    public ResponseEntity<List<TransactionDto>> getAllTransactionsId(@PathVariable Long id) throws Exception {
-        return ResponseEntity.ok(accountService.getAllTransactionsId(id));
+    public ResponseEntity<?> getAllTransactionsId(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @PathVariable Long id) {
+
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            Long jwtUserId = JwtUtil.extractUserId(jwt);
+            String role = JwtUtil.extractRole(jwt);
+
+            Long targetId = "user".equals(role) ? jwtUserId : id;
+            return ResponseEntity.ok(accountService.getAllTransactionsId(targetId));
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired. Please login again.");
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token. Please login again.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
+        }
     }
+
 
     //see all sent
     @GetMapping("/transactions/{id}/sent")
-    public ResponseEntity<List<TransactionDto>> getAllTransactionsSent(@PathVariable Long id) throws Exception {
-        return ResponseEntity.ok(accountService.getAllTransactionsSent(id));
+    public ResponseEntity<?> getAllTransactionsSent(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @PathVariable Long id) {
+
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            Long jwtUserId = JwtUtil.extractUserId(jwt);
+            String role = JwtUtil.extractRole(jwt);
+
+            Long targetId = "user".equals(role) ? jwtUserId : id;
+            return ResponseEntity.ok(accountService.getAllTransactionsSent(targetId));
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired. Please login again.");
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token. Please login again.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
+        }
     }
+
 
     //see all received
     @GetMapping("/transactions/{id}/received")
-    public ResponseEntity<List<TransactionDto>> getAllTransactionsReceived(@PathVariable Long id) throws Exception {
-        return ResponseEntity.ok(accountService.getAllTransactionsReceived(id));
+    public ResponseEntity<?> getAllTransactionsReceived(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @PathVariable Long id) {
+
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            Long jwtUserId = JwtUtil.extractUserId(jwt);
+            String role = JwtUtil.extractRole(jwt);
+
+            Long targetId = "user".equals(role) ? jwtUserId : id;
+            return ResponseEntity.ok(accountService.getAllTransactionsReceived(targetId));
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired. Please login again.");
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token. Please login again.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
+        }
     }
 
-    // sendTo
     @PutMapping("/accounts/sendTo")
-    public ResponseEntity<AccountDto> sendToAccount(@RequestBody Map<String, Object> request) throws Exception {
-        Long senderId = Long.valueOf(request.get("senderId").toString());
-        Long receiverId = Long.valueOf(request.get("receiverId").toString());
-        double amount = Double.parseDouble(request.get("amount").toString());
+    public ResponseEntity<?> sendToAccount(@RequestHeader(value = "Authorization", required = false) String token,
+                                           @RequestBody Map<String, Object> request) {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
 
-        AccountDto senderAccount = accountService.sendToAccount(senderId, receiverId, amount);
-        return ResponseEntity.ok(senderAccount);
+            String jwt = token.replace("Bearer ", "");
+            Long senderId = JwtUtil.extractUserId(jwt);
+            Long receiverId = Long.valueOf(request.get("receiverId").toString());
+            double amount = Double.parseDouble(request.get("amount").toString());
+
+            AccountDto senderAccount = accountService.sendToAccount(senderId, receiverId, amount);
+            return ResponseEntity.ok(senderAccount);
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired. Please login again.");
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token. Please login again.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
+        }
     }
 
     // requestFrom
     @PutMapping("/accounts/requestFrom")
-    public ResponseEntity<String> requestFromAccount(@RequestBody Map<String, Object> request) throws Exception {
-        Long receiverId = Long.valueOf(request.get("receiverId").toString());
-        Long senderId = Long.valueOf(request.get("senderId").toString());
-        double amount = Double.parseDouble(request.get("amount").toString());
+    public ResponseEntity<?> requestFromAccount(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @RequestBody Map<String, Object> request) {
 
-        accountService.requestFromAccount(receiverId, senderId, amount);
-        return ResponseEntity.ok("Transaction is pending.");
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            Long receiverId = JwtUtil.extractUserId(jwt);
+
+            Long senderId = Long.valueOf(request.get("senderId").toString());
+            double amount = Double.parseDouble(request.get("amount").toString());
+
+            accountService.requestFromAccount(receiverId, senderId, amount);
+            return ResponseEntity.ok("Transaction is pending.");
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired. Please login again.");
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token. Please login again.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
+        }
     }
+
 
     //show all pending
     @GetMapping("/transactions/pending")
-    public ResponseEntity<List<TransactionDto>> getAllPendingTransactions() throws Exception {
-        return ResponseEntity.ok(accountService.getAllPendingTransactions());
+    public ResponseEntity<?> getAllPendingTransactions(
+            @RequestHeader(value = "Authorization", required = false) String token) {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            String role = JwtUtil.extractRole(jwt);
+
+            if (!"admin".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Only admins can view all pending transactions.");
+            }
+
+            List<TransactionDto> transactions = accountService.getAllPendingTransactions();
+            return ResponseEntity.ok(transactions);
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired. Please login again.");
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token. Please login again.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
+        }
     }
+
 
     //show all pending for a user
     @GetMapping("/transactions/pending/{id}")
-    public ResponseEntity<List<TransactionDto>> getUserPendingTransactions(@PathVariable Long id) throws Exception {
-        return ResponseEntity.ok(accountService.getUserPendingTransactions(id));
+    public ResponseEntity<?> getUserPendingTransactions(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @PathVariable Long id) {
+
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            Long jwtUserId = JwtUtil.extractUserId(jwt);
+            String role = JwtUtil.extractRole(jwt);
+
+            Long targetId = "user".equals(role) ? jwtUserId : id;
+            return ResponseEntity.ok(accountService.getUserPendingTransactions(targetId));
+
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
+        }
     }
 
-    //show pending sent by user
+    //show pending to be sent by user
     @GetMapping("/transactions/pending/{id}/sent")
-    public ResponseEntity<List<TransactionDto>> getPendingSentTransactions(@PathVariable Long id) throws Exception {
-        return ResponseEntity.ok(accountService.getPendingSentTransactions(id));
+    public ResponseEntity<?> getPendingSentTransactions(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @PathVariable Long id) {
+
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            Long jwtUserId = JwtUtil.extractUserId(jwt);
+            String role = JwtUtil.extractRole(jwt);
+
+            Long targetId = "user".equals(role) ? jwtUserId : id;
+            return ResponseEntity.ok(accountService.getPendingSentTransactions(targetId));
+
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
+        }
     }
 
-    //show pending received by user
+
+    //show pending to be received by user
     @GetMapping("/transactions/pending/{id}/received")
-    public ResponseEntity<List<TransactionDto>> getPendingReceivedTransactions(@PathVariable Long id) throws Exception {
-        return ResponseEntity.ok(accountService.getPendingReceivedTransactions(id));
+    public ResponseEntity<?> getPendingReceivedTransactions(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @PathVariable Long id) {
+
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            Long jwtUserId = JwtUtil.extractUserId(jwt);
+            String role = JwtUtil.extractRole(jwt);
+
+            Long targetId = "user".equals(role) ? jwtUserId : id;
+            return ResponseEntity.ok(accountService.getPendingReceivedTransactions(targetId));
+
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
+        }
     }
+
 
     //execute pending
     @PutMapping("/transactions/pending/{transId}/execute")
-    public AccountDto executePendingTransaction(@PathVariable Long transId) throws Exception {
-        return accountService.executePendingTransaction(transId);
+    public ResponseEntity<?> executePendingTransaction(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @PathVariable Long transId) {
+
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            JwtUtil.extractUserId(jwt); // this will throw exception if JWT is invalid
+
+            AccountDto result = accountService.executePendingTransaction(transId);
+            return ResponseEntity.ok(result);
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired. Please login again.");
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token. Please login again.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
+        }
     }
 
+
     @PostMapping("/login")
-    public ResponseEntity<AccountDto> matchPassword(@RequestBody Map<String, Object> request) throws Exception {
+    public ResponseEntity<Map<String, String>> matchPassword(@RequestBody Map<String, Object> request) throws Exception {
         Long id = Long.valueOf(request.get("id").toString());
         String password = request.get("password").toString();
 
         if (accountService.matchPassword(id, password)) {
-            return ResponseEntity.ok(accountService.getAccountById(id));
+            Account account = accountRepository.findById(id)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
+
+            String token = JwtUtil.generateToken(id, account.getRole());
+            Map<String, String> response = new HashMap<>();
+            response.put("token", token);
+            return ResponseEntity.ok(response);
         } else {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
         }
