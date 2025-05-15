@@ -1,0 +1,4 @@
+banking-app/target/
+frontend/node_modules/
+frontend/.env
+.DS_Store
