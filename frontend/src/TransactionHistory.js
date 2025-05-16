@@ -1,6 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 
+const lightenColor = (color, percent) => {
+  let num = parseInt(color.replace('#', ''), 16),
+    amt = Math.round(2.55 * percent * 100),
+    R = (num >> 16) + amt,
+    G = ((num >> 8) & 0x00ff) + amt,
+    B = (num & 0x0000ff) + amt;
+  return (
+    '#' +
+    (
+      0x1000000 +
+      (R < 255 ? (R < 1 ? 0 : R) : 255) * 0x10000 +
+      (G < 255 ? (G < 1 ? 0 : G) : 255) * 0x100 +
+      (B < 255 ? (B < 1 ? 0 : B) : 255)
+    )
+      .toString(16)
+      .slice(1)
+  );
+};
+
 const TransactionHistory = () => {
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
@@ -11,7 +30,7 @@ const TransactionHistory = () => {
     receiverId: '',
     status: {
       success: false,
-      failed: false,
+      declined: false,
       pending: false,
     },
     month: '',
@@ -21,11 +40,10 @@ const TransactionHistory = () => {
 
   const token = localStorage.getItem('token');
 
-  // Fetch user's account ID
   useEffect(() => {
     const fetchAccountId = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/bank/accounts/1', {
+        const res = await axios.get('http://localhost:8080/bank/account', {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserAccountId(res.data.accountId);
@@ -37,11 +55,12 @@ const TransactionHistory = () => {
     fetchAccountId();
   }, [token]);
 
-  // Fetch all transactions for the user (replace with dynamic ID if needed)
   useEffect(() => {
+    if (!userAccountId) return;
+
     const fetchTransactions = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/bank/transactions/1', {
+        const res = await axios.get(`http://localhost:8080/bank/transactions/${userAccountId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -54,7 +73,7 @@ const TransactionHistory = () => {
     };
 
     fetchTransactions();
-  }, [token]);
+  }, [token, userAccountId]);
 
   const applyFilters = () => {
     const {
@@ -135,7 +154,7 @@ const TransactionHistory = () => {
       receiverId: '',
       status: {
         success: false,
-        failed: false,
+        declined: false,
         pending: false,
       },
       month: '',
@@ -145,85 +164,140 @@ const TransactionHistory = () => {
     setFilteredTransactions(transactions);
   };
 
+  const getRowStyle = (txn) => {
+    if (txn.status.toLowerCase() === 'declined') {
+      return { backgroundColor: '#f4cccc' }; //pink
+    }
+    if (txn.status.toLowerCase() === 'pending') {
+      return { backgroundColor: '#fff9c4' }; // yellow
+    }
+    if (txn.senderId === userAccountId) {
+      return { backgroundColor: '#ffd1b3' }; // red tint
+    }
+    if (txn.receiverId === userAccountId) {
+      return { backgroundColor: '#c8e6c9' }; // green tint
+    }
+    return {};
+  };
+
   return (
     <div style={{ padding: '20px' }}>
       <h2>Transaction History</h2>
 
-      <div style={{ marginBottom: '20px', border: '1px solid #ccc', padding: '10px' }}>
+      <div style={{
+        marginBottom: '20px',
+        border: '1px solid #ccc',
+        padding: '10px',
+        borderRadius: '8px'
+      }}>
         <h4>Filters</h4>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-          <input
-            type="text"
-            placeholder="Transaction ID"
-            name="transId"
-            value={filters.transId}
-            onChange={handleInputChange}
-          />
-          <input
-            type="text"
-            placeholder="Sender ID"
-            name="senderId"
-            value={filters.senderId}
-            onChange={handleInputChange}
-          />
-          <input
-            type="text"
-            placeholder="Receiver ID"
-            name="receiverId"
-            value={filters.receiverId}
-            onChange={handleInputChange}
-          />
-          <select name="month" value={filters.month} onChange={handleInputChange}>
-            <option value="">All Months</option>
-            <option value="January">January</option>
-            <option value="February">February</option>
-            <option value="March">March</option>
-            <option value="April">April</option>
-            <option value="May">May</option>
-            <option value="June">June</option>
-          </select>
-          <label>
+
+        <div style={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: '20px',
+          justifyContent: 'space-between',
+        }}>
+
+          {/* Text Filters */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '200px' }}>
             <input
-              type="checkbox"
-              checked={filters.status.success}
-              onChange={() => handleStatusChange('success')}
-            />
-            Success
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={filters.status.failed}
-              onChange={() => handleStatusChange('failed')}
-            />
-            Failed
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              checked={filters.status.pending}
-              onChange={() => handleStatusChange('pending')}
-            />
-            Pending
-          </label>
-          <label>
-            <input
-              type="checkbox"
-              name="sentOnly"
-              checked={filters.sentOnly}
+              type="text"
+              placeholder="Transaction ID"
+              name="transId"
+              value={filters.transId}
               onChange={handleInputChange}
             />
-            Show Sent Only
-          </label>
-          <label>
             <input
-              type="checkbox"
-              name="receivedOnly"
-              checked={filters.receivedOnly}
+              type="text"
+              placeholder="Sender ID"
+              name="senderId"
+              value={filters.senderId}
               onChange={handleInputChange}
             />
-            Show Received Only
-          </label>
+            <input
+              type="text"
+              placeholder="Receiver ID"
+              name="receiverId"
+              value={filters.receiverId}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          {/* Status Filters */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', minWidth: '150px' }}>
+            <label>
+              <input
+                type="checkbox"
+                checked={filters.status.success}
+                onChange={() => handleStatusChange('success')}
+              />
+              Success
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={filters.status.declined}
+                onChange={() => handleStatusChange('declined')}
+              />
+              Declined
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                checked={filters.status.pending}
+                onChange={() => handleStatusChange('pending')}
+              />
+              Pending
+            </label>
+          </div>
+
+          {/* Month Selector */}
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: '160px' }}>
+            <label htmlFor="month">Month</label>
+            <select name="month" value={filters.month} onChange={handleInputChange}>
+              <option value="">All Months</option>
+              <option value="January">January</option>
+              <option value="February">February</option>
+              <option value="March">March</option>
+              <option value="April">April</option>
+              <option value="May">May</option>
+              <option value="June">June</option>
+              <option value="July">July</option>
+              <option value="August">August</option>
+              <option value="September">September</option>
+              <option value="October">October</option>
+              <option value="November">November</option>
+              <option value="December">December</option>
+            </select>
+          </div>
+
+          {/* Sent/Received Filters */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', minWidth: '180px' }}>
+            <label>
+              <input
+                type="checkbox"
+                name="sentOnly"
+                checked={filters.sentOnly}
+                onChange={handleInputChange}
+              />
+              Show Sent Only
+            </label>
+            <label>
+              <input
+                type="checkbox"
+                name="receivedOnly"
+                checked={filters.receivedOnly}
+                onChange={handleInputChange}
+              />
+              Show Received Only
+            </label>
+          </div>
+
+        </div>
+
+        {/* Action Buttons */}
+        <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
           <button onClick={applyFilters}>Apply</button>
           <button onClick={clearFilters}>Clear</button>
         </div>
@@ -233,17 +307,32 @@ const TransactionHistory = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead style={{ backgroundColor: '#f0f0f0', textAlign: 'left' }}>
             <tr>
-              <th style={{ padding: '8px', border: '1px solid #ddd' }}>Transaction ID</th>
-              <th style={{ padding: '8px', border: '1px solid #ddd' }}>Sender ID</th>
-              <th style={{ padding: '8px', border: '1px solid #ddd' }}>Receiver ID</th>
-              <th style={{ padding: '8px', border: '1px solid #ddd' }}>Amount (₹)</th>
-              <th style={{ padding: '8px', border: '1px solid #ddd' }}>Status</th>
-              <th style={{ padding: '8px', border: '1px solid #ddd' }}>Timestamp</th>
-            </tr>
+      <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Transaction ID</th>
+      <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Sender ID</th>
+      <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Receiver ID</th>
+      <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Amount (₹)</th>
+      <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Status</th>
+      <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Timestamp</th>
+    </tr>
           </thead>
           <tbody>
             {filteredTransactions.map((txn) => (
-              <tr key={txn.transId}>
+              <tr
+                key={txn.transId}
+                style={{
+                  ...getRowStyle(txn),
+                  transition: 'background-color 0.2s ease',
+                  cursor: 'pointer',
+                }}
+                onMouseEnter={(e) => {
+  const original = getRowStyle(txn).backgroundColor || '#fff';
+  e.currentTarget.style.backgroundColor = lightenColor(original, 0.1);
+}}
+                onMouseLeave={(e) => {
+                  const style = getRowStyle(txn);
+                  e.currentTarget.style.backgroundColor = style.backgroundColor || '';
+                }}
+              >
                 <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.transId}</td>
                 <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.senderId}</td>
                 <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.receiverId}</td>

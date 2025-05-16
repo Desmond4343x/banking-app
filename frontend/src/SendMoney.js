@@ -7,40 +7,56 @@ const SendMoney = () => {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const [balance, setBalance] = useState(null);
+  const [userAccountId, setUserAccountId] = useState(null);
 
   const token = localStorage.getItem('token');
 
   useEffect(() => {
-    const fetchBalance = async () => {
+    const fetchAccountData = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/bank/userinfo', {
+        const res = await axios.get('http://localhost:8080/bank/account', {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
         setBalance(res.data.balance);
+        setUserAccountId(res.data.accountId);
       } catch (err) {
-        console.error('Failed to fetch balance:', err);
+        console.error('Failed to fetch account data:', err);
       }
     };
 
-    fetchBalance();
+    fetchAccountData();
   }, [token]);
 
   const handleSend = async (e) => {
     e.preventDefault();
     setMessage('');
 
-    if (!receiverId.trim() || !amount.trim() ) {
+    if (!receiverId.trim() || !amount.trim()) {
       setIsError(true);
       setMessage('Receiver ID and amount are required.');
       return;
     }
 
-    if(amount<0) {
-        setIsError(true);
-        setMessage('Amount cannot be negative.');
-        return;
+    if (parseInt(receiverId) === userAccountId) {
+      setIsError(true);
+      setMessage('You cannot send money to your own account.');
+      return;
+    }
+
+    const numericAmount = parseFloat(amount);
+
+    if (isNaN(numericAmount) || numericAmount <= 0) {
+      setIsError(true);
+      setMessage('Amount must be a positive number.');
+      return;
+    }
+
+    if (balance !== null && numericAmount > balance) {
+      setIsError(true);
+      setMessage('Insufficient balance.');
+      return;
     }
 
     try {
@@ -48,7 +64,7 @@ const SendMoney = () => {
         'http://localhost:8080/bank/accounts/sendTo',
         {
           receiverId: parseInt(receiverId),
-          amount: parseFloat(amount)
+          amount: numericAmount,
         },
         {
           headers: {
@@ -61,26 +77,25 @@ const SendMoney = () => {
       setMessage('Money sent successfully!');
       setReceiverId('');
       setAmount('');
-      setBalance(response.data.balance); // Update balance
+      setBalance(response.data.balance); // Update balance from response
     } catch (error) {
-        console.error('Error sending money:', error);
-      
-        let errorMsg = 'Failed to send money. Please try again.';
-        if (error.response && error.response.data) {
-          errorMsg = error.response.data; 
-        }
-      
-        setIsError(true);
-        setMessage(errorMsg);
+      console.error('Error sending money:', error);
+
+      let errorMsg = 'Failed to send money. Please try again.';
+      if (error.response && error.response.data) {
+        errorMsg = error.response.data;
       }
-      
+
+      setIsError(true);
+      setMessage(errorMsg);
+    }
   };
 
   return (
     <div style={{ padding: '20px' }}>
       <h2 style={{ marginBottom: '10px' }}>Send Money</h2>
       {balance !== null && (
-        <p style={{ marginTop: '0', marginBottom: '20px' }}>
+        <p style={{ marginTop: '0', marginBottom: '0px' }}>
           <strong>Current Balance:</strong> ₹{balance}/-
         </p>
       )}

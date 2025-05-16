@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 const RequestMoney = () => {
@@ -6,8 +6,24 @@ const RequestMoney = () => {
   const [amount, setAmount] = useState('');
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
+  const [userAccountId, setUserAccountId] = useState(null);
 
   const token = localStorage.getItem('token');
+
+  useEffect(() => {
+    const fetchAccountId = async () => {
+      try {
+        const res = await axios.get('http://localhost:8080/bank/account', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setUserAccountId(res.data.accountId);
+      } catch (error) {
+        console.error('Failed to fetch account info:', error);
+      }
+    };
+
+    fetchAccountId();
+  }, [token]);
 
   const handleRequest = async (e) => {
     e.preventDefault();
@@ -16,6 +32,12 @@ const RequestMoney = () => {
     if (!senderId.trim() || !amount.trim()) {
       setIsError(true);
       setMessage('Sender ID and amount are required.');
+      return;
+    }
+
+    if (parseInt(senderId) === userAccountId) {
+      setIsError(true);
+      setMessage('You cannot request money from your own account.');
       return;
     }
 
