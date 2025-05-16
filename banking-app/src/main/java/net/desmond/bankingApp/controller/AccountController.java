@@ -63,6 +63,28 @@ public class AccountController {
         }
     }
 
+    //get account only with jwt
+    @GetMapping("/account")
+    public ResponseEntity<AccountDto> getAccountByJwt(@RequestHeader(value = "Authorization", required = false) String token) throws Exception {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+            Long targetId = JwtUtil.extractUserId(jwt);
+            return ResponseEntity.ok(accountService.getAccountById(targetId));
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(null);
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(null);
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+        }
+    }
 
     //deposit amount rest api
     @PutMapping("/accounts/deposit")
@@ -458,16 +480,17 @@ public class AccountController {
 
 
     //execute pending
-    @PutMapping("/transactions/pending/{transId}/execute")
+    @PutMapping("/transactions/pending/execute")
     public ResponseEntity<?> executePendingTransaction(
             @RequestHeader(value = "Authorization", required = false) String token,
-            @PathVariable Long transId) {
+            @RequestBody Map<String, Object> request) {
 
         try {
             if (token == null || !token.startsWith("Bearer ")) {
                 throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
             }
 
+            Long transId = Long.valueOf(request.get("transId").toString());
             String jwt = token.replace("Bearer ", "");
             JwtUtil.extractUserId(jwt); // this will throw exception if JWT is invalid
 
@@ -485,6 +508,34 @@ public class AccountController {
         }
     }
 
+    //decline request
+    @PutMapping("/transactions/pending/decline")
+    public ResponseEntity<?> declinePendingTransaction(
+            @RequestHeader(value = "Authorization", required = false) String token,
+            @RequestBody Map<String, Object> request) {
+
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            Long transId = Long.valueOf(request.get("transId").toString());
+            String jwt = token.replace("Bearer ", "");
+            JwtUtil.extractUserId(jwt); //exception if invalid
+
+            AccountDto result = accountService.declinePendingTransaction(transId);
+            return ResponseEntity.ok(result);
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired. Please login again.");
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token. Please login again.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
+        }
+    }
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> matchPassword(@RequestBody Map<String, Object> request) throws Exception {
@@ -501,6 +552,30 @@ public class AccountController {
             return ResponseEntity.ok(response);
         } else {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+        }
+    }
+
+    @DeleteMapping("/transaction/{transId}")
+    public ResponseEntity<String> deleteTransactionById(@RequestHeader(value = "Authorization", required = false) String token,
+                                                    @PathVariable Long transId) {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+            }
+
+            String jwt = token.replace("Bearer ", "");
+
+            accountService.deleteTransactionById(transId);
+            return ResponseEntity.ok("Transaction deleted successfully.");
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired. Please login again.");
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token. Please login again.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
         }
     }
 

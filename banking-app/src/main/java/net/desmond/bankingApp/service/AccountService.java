@@ -41,6 +41,10 @@ public interface AccountService {
 
     AccountDto executePendingTransaction(Long transId) throws Exception;
 
+    AccountDto declinePendingTransaction(Long transId) throws Exception;
+
     boolean matchPassword(Long id, String pass) throws Exception;
+
+    void deleteTransactionById(Long transId);
 }
 

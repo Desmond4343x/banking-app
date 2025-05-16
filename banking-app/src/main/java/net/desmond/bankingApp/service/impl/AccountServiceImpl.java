@@ -337,11 +337,43 @@ public class AccountServiceImpl implements AccountService {
     }
 
     @Override
+    public AccountDto declinePendingTransaction(Long transId) throws Exception {
+        Transaction transaction = transactionRepository.findById(transId)
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction does not exist"));
+
+        if (!transaction.getStatus().equals("pending")) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction is not pending");
+        }
+
+        Account receiver = accountRepository.findById(transaction.getReceiverId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receiver Account does not exist"));
+        Account sender = accountRepository.findById(transaction.getSenderId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sender Account does not exist"));
+
+        Transaction decryptedTransaction = Mapper.mapToDecryptedTransaction(transaction,accountCredRepository);
+        double amount = Double.valueOf(decryptedTransaction.getAmount());
+
+        Transaction declined = new Transaction(transaction.getSenderId(), transaction.getReceiverId(), String.valueOf(amount), "declined", sender.getAesEncryptedKey());
+        transactionRepository.save(Mapper.mapToEncryptedTransaction(declined, accountCredRepository));
+        transactionRepository.deleteById(transId);
+
+        return Mapper.mapToAccountDto(Mapper.mapToDecryptedAccount(sender, accountCredRepository));
+    }
+
+    @Override
     public boolean matchPassword(Long id, String pass) throws Exception {
         AccountCred acc = accountCredRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist"));
 
         return HashingUtil.verifyPassword(pass,acc.getHashedUserPassword());
+    }
+
+    @Override
+    public void deleteTransactionById(Long transId) {
+        Transaction foundTrans = transactionRepository.findById(transId)
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction does not exist"));
+
+        transactionRepository.deleteById(transId);
     }
 
 }
