@@ -82,7 +82,7 @@ const PendingTransactionsRecieve = () => {
             {transactions.length === 0 ? (
               <tr>
                 <td colSpan="6" style={{ padding: '10px', textAlign: 'center' }}>
-                  No pending requests sent.
+                  No pending Requests.
                 </td>
               </tr>
             ) : (

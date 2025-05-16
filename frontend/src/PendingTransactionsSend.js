@@ -121,7 +121,7 @@ const PendingTransactions = () => {
             {transactions.length === 0 && (
               <tr>
                 <td colSpan="6" style={{ padding: '10px', textAlign: 'center' }}>
-                  No pending requests.
+                  No pending Approvals.
                 </td>
               </tr>
             )}

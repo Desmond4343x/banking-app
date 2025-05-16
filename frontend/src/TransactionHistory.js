@@ -32,11 +32,14 @@ const TransactionHistory = () => {
       success: false,
       declined: false,
       pending: false,
+      deposit: false,
+      withdraw: false,
     },
     month: '',
     sentOnly: false,
     receivedOnly: false,
   });
+  const [filtersOpen, setFiltersOpen] = useState(true);
 
   const token = localStorage.getItem('token');
 
@@ -156,6 +159,8 @@ const TransactionHistory = () => {
         success: false,
         declined: false,
         pending: false,
+        deposit: false,
+        withdraw: false,
       },
       month: '',
       sentOnly: false,
@@ -171,6 +176,12 @@ const TransactionHistory = () => {
     if (txn.status.toLowerCase() === 'pending') {
       return { backgroundColor: '#fff9c4' }; // yellow
     }
+    if (txn.status.toLowerCase() === 'deposit') {
+      return { backgroundColor: '#c8e6c9' }; // green
+    }
+    if (txn.status.toLowerCase() === 'withdraw') {
+      return { backgroundColor: '#ffd1b3' }; // red tint
+    }
     if (txn.senderId === userAccountId) {
       return { backgroundColor: '#ffd1b3' }; // red tint
     }
@@ -184,136 +195,178 @@ const TransactionHistory = () => {
     <div style={{ padding: '20px' }}>
       <h2>Transaction History</h2>
 
-      <div style={{
-        marginBottom: '20px',
-        border: '1px solid #ccc',
-        padding: '10px',
-        borderRadius: '8px'
-      }}>
-        <h4>Filters</h4>
-
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '20px',
-          justifyContent: 'space-between',
-        }}>
-
-          {/* Text Filters */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '200px' }}>
-            <input
-              type="text"
-              placeholder="Transaction ID"
-              name="transId"
-              value={filters.transId}
-              onChange={handleInputChange}
-            />
-            <input
-              type="text"
-              placeholder="Sender ID"
-              name="senderId"
-              value={filters.senderId}
-              onChange={handleInputChange}
-            />
-            <input
-              type="text"
-              placeholder="Receiver ID"
-              name="receiverId"
-              value={filters.receiverId}
-              onChange={handleInputChange}
-            />
-          </div>
-
-          {/* Status Filters */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', minWidth: '150px' }}>
-            <label>
-              <input
-                type="checkbox"
-                checked={filters.status.success}
-                onChange={() => handleStatusChange('success')}
-              />
-              Success
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={filters.status.declined}
-                onChange={() => handleStatusChange('declined')}
-              />
-              Declined
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                checked={filters.status.pending}
-                onChange={() => handleStatusChange('pending')}
-              />
-              Pending
-            </label>
-          </div>
-
-          {/* Month Selector */}
-          <div style={{ display: 'flex', flexDirection: 'column', minWidth: '160px' }}>
-            <label htmlFor="month">Month</label>
-            <select name="month" value={filters.month} onChange={handleInputChange}>
-              <option value="">All Months</option>
-              <option value="January">January</option>
-              <option value="February">February</option>
-              <option value="March">March</option>
-              <option value="April">April</option>
-              <option value="May">May</option>
-              <option value="June">June</option>
-              <option value="July">July</option>
-              <option value="August">August</option>
-              <option value="September">September</option>
-              <option value="October">October</option>
-              <option value="November">November</option>
-              <option value="December">December</option>
-            </select>
-          </div>
-
-          {/* Sent/Received Filters */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', minWidth: '180px' }}>
-            <label>
-              <input
-                type="checkbox"
-                name="sentOnly"
-                checked={filters.sentOnly}
-                onChange={handleInputChange}
-              />
-              Show Sent Only
-            </label>
-            <label>
-              <input
-                type="checkbox"
-                name="receivedOnly"
-                checked={filters.receivedOnly}
-                onChange={handleInputChange}
-              />
-              Show Received Only
-            </label>
-          </div>
-
+      <div
+        style={{
+          marginBottom: '20px',
+          border: '1px solid #ccc',
+          borderRadius: '8px',
+          overflow: 'hidden',
+        }}
+      >
+        <div
+          onClick={() => setFiltersOpen((open) => !open)}
+          style={{
+            padding: '10px',
+            backgroundColor: 'white',
+            cursor: 'pointer',
+            userSelect: 'none',
+            fontWeight: 'bold',
+            fontSize: '15px',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+          }}
+          aria-expanded={filtersOpen}
+          aria-controls="filters-section"
+        >
+          Filters
+          <span style={{ transform: filtersOpen ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.3s' }}>
+            ▶
+          </span>
         </div>
 
-        {/* Action Buttons */}
-        <div style={{ marginTop: '15px', display: 'flex', gap: '10px' }}>
-          <button onClick={applyFilters}>Apply</button>
-          <button onClick={clearFilters}>Clear</button>
-        </div>
+        {filtersOpen && (
+          <div
+            id="filters-section"
+            style={{
+              padding: '10px',
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '20px',
+              justifyContent: 'space-between',
+            }}
+          >
+            {/* Text Filters */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: '200px' }}>
+              <input
+                type="text"
+                placeholder="Transaction ID"
+                name="transId"
+                value={filters.transId}
+                onChange={handleInputChange}
+              />
+              <input
+                type="text"
+                placeholder="Sender ID"
+                name="senderId"
+                value={filters.senderId}
+                onChange={handleInputChange}
+              />
+              <input
+                type="text"
+                placeholder="Receiver ID"
+                name="receiverId"
+                value={filters.receiverId}
+                onChange={handleInputChange}
+              />
+            </div>
+
+            {/* Status Filters */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', minWidth: '150px' }}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={filters.status.success}
+                  onChange={() => handleStatusChange('success')}
+                />
+                Success
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={filters.status.declined}
+                  onChange={() => handleStatusChange('declined')}
+                />
+                Declined
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={filters.status.pending}
+                  onChange={() => handleStatusChange('pending')}
+                />
+                Pending
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={filters.status.deposit}
+                  onChange={() => handleStatusChange('deposit')}
+                />
+                Deposit
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={filters.status.withdraw}
+                  onChange={() => handleStatusChange('withdraw')}
+                />
+                Withdraw
+              </label>
+            </div>
+
+            {/* Month Selector */}
+            <div style={{ display: 'flex', flexDirection: 'column', minWidth: '160px' }}>
+              <label htmlFor="month">Month</label>
+              <select name="month" value={filters.month} onChange={handleInputChange}>
+                <option value="">All Months</option>
+                <option value="January">January</option>
+                <option value="February">February</option>
+                <option value="March">March</option>
+                <option value="April">April</option>
+                <option value="May">May</option>
+                <option value="June">June</option>
+                <option value="July">July</option>
+                <option value="August">August</option>
+                <option value="September">September</option>
+                <option value="October">October</option>
+                <option value="November">November</option>
+                <option value="December">December</option>
+              </select>
+            </div>
+
+            {/* Sent/Received Filters */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', minWidth: '180px' }}>
+              <label>
+                <input
+                  type="checkbox"
+                  name="sentOnly"
+                  checked={filters.sentOnly}
+                  onChange={handleInputChange}
+                />
+                Show Sent Only
+              </label>
+              <label>
+                <input
+                  type="checkbox"
+                  name="receivedOnly"
+                  checked={filters.receivedOnly}
+                  onChange={handleInputChange}
+                />
+                Show Received Only
+              </label>
+            </div>
+
+            {/* Action Buttons */}
+            <div style={{ marginTop: '15px', display: 'flex', gap: '10px', width: '100%' }}>
+              <button onClick={applyFilters}>Apply</button>
+              <button onClick={clearFilters}>Clear</button>
+            </div>
+          </div>
+        )}
       </div>
 
-      <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+      <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead style={{ backgroundColor: '#f0f0f0', textAlign: 'left' }}>
             <tr>
-      <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Transaction ID</th>
-      <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Sender ID</th>
-      <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Receiver ID</th>
-      <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Amount (₹)</th>
-      <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Status</th>
-      <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Timestamp</th>
-    </tr>
+              <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Transaction ID</th>
+              <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Sender ID</th>
+              <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Receiver ID</th>
+              <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Amount</th>
+              <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Status</th>
+              <th style={{ padding: '8px', border: '1px solid #ddd', fontWeight: 'bold' }}>Timestamp</th>
+            </tr>
           </thead>
           <tbody>
             {filteredTransactions.map((txn) => (
@@ -333,17 +386,17 @@ const TransactionHistory = () => {
                   e.currentTarget.style.backgroundColor = style.backgroundColor || '';
                 }}
               >
-                <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.transId}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.senderId}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.receiverId}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.amount}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.status}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.timestamp}</td>
+                <td style={{ padding: '8px', border: '1px solid #ddd' }}>{txn.transId}</td>
+                <td style={{ padding: '8px', border: '1px solid #ddd' }}>{txn.senderId}</td>
+                <td style={{ padding: '8px', border: '1px solid #ddd' }}>{txn.receiverId}</td>
+                <td style={{ padding: '8px', border: '1px solid #ddd' }}>{txn.amount}</td>
+                <td style={{ padding: '8px', border: '1px solid #ddd' }}>{txn.status}</td>
+                <td style={{ padding: '8px', border: '1px solid #ddd' }}>{txn.timestamp}</td>
               </tr>
             ))}
             {filteredTransactions.length === 0 && (
               <tr>
-                <td colSpan="6" style={{ padding: '10px', textAlign: 'center' }}>
+                <td colSpan="6" style={{ textAlign: 'center', padding: '20px' }}>
                   No transactions found.
                 </td>
               </tr>

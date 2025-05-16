@@ -9,6 +9,8 @@ import RequestMoney from './RequestMoney';
 import TransactionHistory from './TransactionHistory';
 import PendingTransactionsSend from './PendingTransactionsSend';
 import PendingTransactionsRecieve from './PendingTransactionsRecieve';
+import WithdrawMoney from './WithdrawMoney';
+import DepositMoney from './DepositMoney';
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
@@ -35,7 +37,7 @@ const App = () => {
     <Router>
       <div style={{ display: 'flex' }}>
         {/* Sidebar */}
-        <nav style={{ width: '200px', padding: '20px', backgroundColor: '#f0f0f0', minHeight: '100vh' }}>
+        <nav style={{ width: '210px', padding: '20px', backgroundColor: '#f0f0f0', minHeight: '100vh' }}>
           <ul style={{ listStyleType: 'none', padding: 0 }}>
             <li style={{ marginTop: '50px' }}><Link to="/" style={{ textDecoration: 'none' }} onClick={handleLogout}>Home</Link></li>
 
@@ -53,8 +55,8 @@ const App = () => {
                 <li style={{ marginTop: '50px' }}><Link to="/userinfo" style={{ textDecoration: 'none' }}>My Account</Link></li>
                 <li style={{ marginTop: '35px' }}><Link to="/sendmoney" style={{ textDecoration: 'none' }}>Send Money</Link></li>
                 <li style={{ marginTop: '5px' }}><Link to="/requestmoney" style={{ textDecoration: 'none' }}>Request Money</Link></li>
-                <li style={{ marginTop: '5px' }}><Link to="#" style={{ textDecoration: 'none' }}>Deposit Money</Link></li>
-                <li style={{ marginTop: '5px' }}><Link to="#" style={{ textDecoration: 'none' }}>Withdraw Money</Link></li>
+                <li style={{ marginTop: '5px' }}><Link to="/depositmoney" style={{ textDecoration: 'none' }}>Deposit Money</Link></li>
+                <li style={{ marginTop: '5px' }}><Link to="/withdrawmoney" style={{ textDecoration: 'none' }}>Withdraw Money</Link></li>
                 <li style={{ marginTop: '35px' }}><Link to="/pendingapprovals" style={{ textDecoration: 'none' }}>Pending Approvals</Link></li>
                 <li style={{ marginTop: '5px' }}><Link to="/pendingrequests" style={{ textDecoration: 'none' }}>Pending Requests</Link></li>
                 <li style={{ marginTop: '35px' }}><Link to="/transactionhistory" style={{ textDecoration: 'none' }}>Transaction History</Link></li>
@@ -79,6 +81,8 @@ const App = () => {
             <Route path="/transactionhistory" element={<TransactionHistory />} />
             <Route path="/pendingapprovals" element={<PendingTransactionsSend />} />
             <Route path="/pendingrequests" element={<PendingTransactionsRecieve />} />
+            <Route path="/depositmoney" element={<DepositMoney />} />
+            <Route path="/withdrawmoney" element={<WithdrawMoney />} />
           </Routes>
         </div>
       </div>

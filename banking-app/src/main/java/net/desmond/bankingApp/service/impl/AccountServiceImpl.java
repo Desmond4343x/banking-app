@@ -107,7 +107,7 @@ public class AccountServiceImpl implements AccountService {
 
         Account encryptedAccount = Mapper.mapToEncryptedAccount(decryptedAccount,accountCredRepository);
 
-        Transaction transaction =  new Transaction(id,id,String.valueOf(amount),"success",encryptedAccount.getAesEncryptedKey());
+        Transaction transaction =  new Transaction(id,id,String.valueOf(amount),"deposit",encryptedAccount.getAesEncryptedKey());
         transactionRepository.save(Mapper.mapToEncryptedTransaction(transaction,accountCredRepository));
 
         return Mapper.mapToAccountDto(Mapper.mapToDecryptedAccount(accountRepository.save(encryptedAccount),accountCredRepository));
@@ -122,7 +122,7 @@ public class AccountServiceImpl implements AccountService {
         double curAmount = Double.valueOf(decryptedAccount.getBalance());
 
         if (curAmount < amount) {
-            Transaction transaction =  new Transaction(id,id,String.valueOf(-amount),"failed", foundAccount.getAesEncryptedKey());
+            Transaction transaction =  new Transaction(id,id,String.valueOf(amount),"withdraw failed", foundAccount.getAesEncryptedKey());
             transactionRepository.save(Mapper.mapToEncryptedTransaction(transaction,accountCredRepository));
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient Balance");
         }else {
@@ -131,7 +131,7 @@ public class AccountServiceImpl implements AccountService {
 
             Account encryptedAccount = Mapper.mapToEncryptedAccount(decryptedAccount,accountCredRepository);
 
-            Transaction transaction =  new Transaction(id,id,String.valueOf(-amount),"success",encryptedAccount.getAesEncryptedKey());
+            Transaction transaction =  new Transaction(id,id,String.valueOf(amount),"withdraw",encryptedAccount.getAesEncryptedKey());
             transactionRepository.save(Mapper.mapToEncryptedTransaction(transaction,accountCredRepository));
 
             return Mapper.mapToAccountDto(Mapper.mapToDecryptedAccount(accountRepository.save(encryptedAccount),accountCredRepository));
