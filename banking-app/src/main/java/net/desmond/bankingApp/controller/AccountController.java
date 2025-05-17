@@ -4,7 +4,9 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import net.desmond.bankingApp.dto.AccountDto;
 import net.desmond.bankingApp.entity.Account;
+import net.desmond.bankingApp.mapper.Mapper;
 import net.desmond.bankingApp.repository.AccountRepository;
+import net.desmond.bankingApp.secureVault.AccountCredRepository;
 import net.desmond.bankingApp.service.AccountService;
 import net.desmond.bankingApp.transactions.TransactionDto;
 import net.desmond.bankingApp.utils.JwtUtil;
@@ -29,10 +31,12 @@ public class AccountController {
 
     private AccountService accountService;
     private AccountRepository accountRepository;
+    private AccountCredRepository accountCredRepository;
 
-    public AccountController(AccountService accountService,AccountRepository accountRepository) {
+    public AccountController(AccountService accountService,AccountRepository accountRepository,AccountCredRepository accountCredRepository) {
         this.accountService = accountService;
         this.accountRepository = accountRepository;
+        this.accountCredRepository = accountCredRepository;
     }
 
     //add account rest api
@@ -556,13 +560,28 @@ public class AccountController {
         if (accountService.matchPassword(id, password)) {
             Account account = accountRepository.findById(id)
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist."));
+            Account decrypted = Mapper.mapToDecryptedAccount(account,accountCredRepository);
 
-            String token = JwtUtil.generateToken(id, account.getRole());
+            if (!decrypted.getVerificationStatus().equalsIgnoreCase("verified")) {
+                throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account is not verified yet.");
+            }
+
+            String token = JwtUtil.generateToken(id, decrypted.getRole());
             Map<String, String> response = new HashMap<>();
             response.put("token", token);
             return ResponseEntity.ok(response);
         } else {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials.");
+        }
+    }
+
+    @GetMapping("/verify")
+    public ResponseEntity<String> verifyEmail(@RequestParam("id") Long id, @RequestParam("token") String token)  throws Exception {
+        if (accountService.matchToken(id, token)) {
+            accountService.markAsVerified(id);
+            return ResponseEntity.ok("Email verified successfully.");
+        } else {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid or expired verification link.");
         }
     }
 
@@ -589,6 +608,7 @@ public class AccountController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
         }
     }
+
 
 }
 

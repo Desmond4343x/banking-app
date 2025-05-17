@@ -13,17 +13,22 @@ import net.desmond.bankingApp.transactions.TransactionRepository;
 import net.desmond.bankingApp.utils.EncryptionUtil;
 import net.desmond.bankingApp.utils.HashingUtil;
 import net.desmond.bankingApp.utils.KeyGeneratorUtil;
+import net.desmond.bankingApp.utils.EmailService;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.crypto.SecretKey;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Service
 public class AccountServiceImpl implements AccountService {
@@ -31,6 +36,9 @@ public class AccountServiceImpl implements AccountService {
     private AccountRepository accountRepository;
     private AccountCredRepository accountCredRepository; //can be considered the only dependency for decrypting everything, as without this whole data cannot be accessed.
     private TransactionRepository transactionRepository;
+
+    @Autowired
+    private EmailService emailService;
 
     public AccountServiceImpl(AccountRepository accountRepository, AccountCredRepository accountCredRepository, TransactionRepository transactionRepository) {
         this.accountRepository = accountRepository;
@@ -75,6 +83,7 @@ public class AccountServiceImpl implements AccountService {
         account.setAesEncryptedKey(encryptedAesKey);
         account.setRsaPublicKey(KeyGeneratorUtil.encodeKeyToBase64(publicKey));
         account.setRole(role);
+        account.setVerificationStatus(UUID.randomUUID().toString());
         Account savedAccount = accountRepository.save(account);
         //acc saved unencrypted
 
@@ -91,6 +100,11 @@ public class AccountServiceImpl implements AccountService {
         //encryption in mapper class
         Account encryptedAccount = Mapper.mapToEncryptedAccount(savedAccount,accountCredRepository);
         Account savedEncryptedAccount = accountRepository.save(encryptedAccount);
+
+        //send verification with unencrypted token
+        Account decrypted = Mapper.mapToDecryptedAccount(encryptedAccount,accountCredRepository);
+        String link = "http://localhost:8080/bank/verify?id=" + decrypted.getAccountId() + "&token=" +  URLEncoder.encode(decrypted.getVerificationStatus(), StandardCharsets.UTF_8);
+        emailService.sendVerificationEmail(decrypted.getAccountHolderEmailAddress(), "Silverstone: Email Verification", "\nClick this link to verify your email: " + link+"\nfrom Silverstone Support Team");
 
         return Mapper.mapToAccountDto(saved);
     }
@@ -395,6 +409,27 @@ public class AccountServiceImpl implements AccountService {
             }
         }
         throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account with this Email does not exist.");
+    }
+
+    @Override
+    public boolean matchToken(Long id, String token) throws Exception {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found."));
+
+        Account decrypted = Mapper.mapToDecryptedAccount(account,accountCredRepository);
+
+        return decrypted.getVerificationStatus().equals(token);
+    }
+
+    @Override
+    public void markAsVerified(Long id) throws Exception {
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found."));
+
+        Account decrypted = Mapper.mapToDecryptedAccount(account,accountCredRepository);
+        decrypted.setVerificationStatus("verified");
+        Account encrypted = Mapper.mapToEncryptedAccount(decrypted,accountCredRepository);
+        accountRepository.save(encrypted);
     }
 
 }

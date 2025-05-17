@@ -49,6 +49,8 @@ public class Mapper {
         String encryptedBalance = EncryptionUtil.encryptWithAES(account.getBalance(), aesKey);
         String encryptedAddress = EncryptionUtil.encryptWithAES(account.getAccountHolderAddress(), aesKey);
         String encryptedEmailAddress = EncryptionUtil.encryptWithAES(account.getAccountHolderEmailAddress(), aesKey);
+        String encryptedRole = EncryptionUtil.encryptWithAES(account.getRole(), aesKey);
+        String encryptedVerificationStatus = EncryptionUtil.encryptWithAES(account.getVerificationStatus(), aesKey);
 
         //assign values
         encryptedAccount.setAccountId(account.getAccountId());
@@ -58,7 +60,8 @@ public class Mapper {
         encryptedAccount.setAccountHolderEmailAddress(encryptedEmailAddress);
         encryptedAccount.setAesEncryptedKey(account.getAesEncryptedKey());
         encryptedAccount.setRsaPublicKey(account.getRsaPublicKey());
-        encryptedAccount.setRole(account.getRole());
+        encryptedAccount.setRole(encryptedRole);
+        encryptedAccount.setVerificationStatus(encryptedVerificationStatus);
 
         return encryptedAccount;
     }
@@ -76,7 +79,8 @@ public class Mapper {
         String decryptedBalance = EncryptionUtil.decryptWithAES(account.getBalance(), aesKey);
         String decryptedAddress = EncryptionUtil.decryptWithAES(account.getAccountHolderAddress(), aesKey);
         String decryptedEmailAddress = EncryptionUtil.decryptWithAES(account.getAccountHolderEmailAddress(), aesKey);
-
+        String decryptedRole = EncryptionUtil.decryptWithAES(account.getRole(), aesKey);
+        String decryptedVerificationStatus = EncryptionUtil.decryptWithAES(account.getVerificationStatus(), aesKey);
 
         //assign values
         decryptedAccount.setAccountId(account.getAccountId());
@@ -86,7 +90,8 @@ public class Mapper {
         decryptedAccount.setAccountHolderEmailAddress(decryptedEmailAddress);
         decryptedAccount.setAesEncryptedKey(account.getAesEncryptedKey());
         decryptedAccount.setRsaPublicKey(account.getRsaPublicKey());
-        decryptedAccount.setRole(account.getRole());
+        decryptedAccount.setRole(decryptedRole);
+        decryptedAccount.setVerificationStatus(decryptedVerificationStatus);
 
         return decryptedAccount;
     }

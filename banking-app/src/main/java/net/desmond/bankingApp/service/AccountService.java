@@ -48,5 +48,9 @@ public interface AccountService {
     void deleteTransactionById(Long transId);
 
     Long findIdByEmail(String email) throws Exception;
+
+    boolean matchToken(Long id, String token) throws Exception;
+
+    void markAsVerified(Long id) throws Exception;
 }
 

@@ -1,0 +1,12 @@
+spring.application.name=banking-app
+spring.datasource.url=jdbc:mysql://localhost:3306/banking_app
+spring.datasource.username=root
+spring.datasource.password=1234
+spring.jpa.hibernate.ddl-auto=update
+spring.mvc.problemdetails.enabled=true
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username="your email sender account"
+spring.mail.password="your app pass"
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true

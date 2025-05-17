@@ -35,6 +35,9 @@ public class Account {
     @Column(name = "role")
     private String role;
 
+    @Column(name = "verification_status")
+    private String verificationStatus;
+
     public Account() {}
 
     public Account(Long accountId, String accountHolderName, String balance, String accountHolderAddress, String accountHolderEmailAddress) {
@@ -51,6 +54,14 @@ public class Account {
         this.accountHolderName=account.getAccountHolderName();
         this.accountHolderEmailAddress=account.getAccountHolderEmailAddress();
         this.balance=account.getBalance();
+    }
+
+    public String getVerificationStatus() {
+        return verificationStatus;
+    }
+
+    public void setVerificationStatus(String verificationStatus) {
+        this.verificationStatus = verificationStatus;
     }
 
     public Long getAccountId() {
