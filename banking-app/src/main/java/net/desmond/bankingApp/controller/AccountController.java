@@ -22,6 +22,11 @@ import java.util.Map;
 @RequestMapping("/bank")
 public class AccountController {
 
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.badRequest().body(ex.getMessage());
+    }
+
     private AccountService accountService;
     private AccountRepository accountRepository;
 
@@ -42,7 +47,7 @@ public class AccountController {
                                                      @PathVariable Long id) throws Exception {
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -68,7 +73,7 @@ public class AccountController {
     public ResponseEntity<AccountDto> getAccountByJwt(@RequestHeader(value = "Authorization", required = false) String token) throws Exception {
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -92,7 +97,7 @@ public class AccountController {
                                                      @RequestBody Map<String, Object> request) throws Exception {
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -119,7 +124,7 @@ public class AccountController {
                                                      @RequestBody Map<String, Object> request) throws Exception {
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -145,7 +150,7 @@ public class AccountController {
     public ResponseEntity<List<AccountDto>> getAllAccounts(@RequestHeader(value = "Authorization", required = false) String token) {
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -173,13 +178,13 @@ public class AccountController {
                                                     @PathVariable Long id) {
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
             String role = JwtUtil.extractRole(jwt);
             if (!"admin".equals(role)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Not an Admin");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Not an Admin.");
             }
             accountService.deleteAccountById(id);
             return ResponseEntity.ok("Account deleted successfully.");
@@ -201,13 +206,13 @@ public class AccountController {
     public ResponseEntity<?> getAllTransactions(@RequestHeader(value = "Authorization", required = false) String token) {
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
             String role = JwtUtil.extractRole(jwt);
             if (!"admin".equals(role)) {
-                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Not an Admin");
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Not an Admin.");
             }
             return ResponseEntity.ok(accountService.getAllTransactions());
 
@@ -231,7 +236,7 @@ public class AccountController {
 
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -261,7 +266,7 @@ public class AccountController {
 
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -291,7 +296,7 @@ public class AccountController {
 
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -317,7 +322,7 @@ public class AccountController {
                                            @RequestBody Map<String, Object> request) {
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -347,7 +352,7 @@ public class AccountController {
 
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -377,7 +382,7 @@ public class AccountController {
             @RequestHeader(value = "Authorization", required = false) String token) {
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -410,7 +415,7 @@ public class AccountController {
 
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -435,7 +440,7 @@ public class AccountController {
 
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -461,7 +466,7 @@ public class AccountController {
 
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");
@@ -487,7 +492,7 @@ public class AccountController {
 
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             Long transId = Long.valueOf(request.get("transId").toString());
@@ -516,7 +521,7 @@ public class AccountController {
 
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             Long transId = Long.valueOf(request.get("transId").toString());
@@ -539,19 +544,25 @@ public class AccountController {
 
     @PostMapping("/login")
     public ResponseEntity<Map<String, String>> matchPassword(@RequestBody Map<String, Object> request) throws Exception {
-        Long id = Long.valueOf(request.get("id").toString());
+        Long id;
         String password = request.get("password").toString();
+
+        if(request.containsKey("email")){
+            id=accountService.findIdByEmail(request.get("email").toString().trim().toLowerCase());
+        } else {
+            id = Long.valueOf(request.get("id").toString());
+        }
 
         if (accountService.matchPassword(id, password)) {
             Account account = accountRepository.findById(id)
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account not found"));
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist."));
 
             String token = JwtUtil.generateToken(id, account.getRole());
             Map<String, String> response = new HashMap<>();
             response.put("token", token);
             return ResponseEntity.ok(response);
         } else {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Invalid credentials.");
         }
     }
 
@@ -560,7 +571,7 @@ public class AccountController {
                                                     @PathVariable Long transId) {
         try {
             if (token == null || !token.startsWith("Bearer ")) {
-                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token");
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
             }
 
             String jwt = token.replace("Bearer ", "");

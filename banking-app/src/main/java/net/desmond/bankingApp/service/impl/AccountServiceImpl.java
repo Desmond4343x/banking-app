@@ -40,11 +40,20 @@ public class AccountServiceImpl implements AccountService {
 
     @Override
     public AccountDto createAccount(Map<String, Object> requestData) throws Exception { //map of data from user, converted to accountDto
-        String accountHolderName = requestData.get("accountHolderName").toString();
-        String balance = requestData.get("balance").toString();
-        String accountHolderAddress = requestData.get("accountHolderAddress").toString();
-        String accountHolderEmailAddress = requestData.get("accountHolderEmailAddress").toString();
-        String role = requestData.get("accountHolderRole").toString();
+        String accountHolderName = requestData.get("accountHolderName").toString().trim();
+        String balance = requestData.get("balance").toString().trim();
+        String accountHolderAddress = requestData.get("accountHolderAddress").toString().trim();
+        String accountHolderEmailAddress = requestData.get("accountHolderEmailAddress").toString().trim().toLowerCase();
+        String role = requestData.get("accountHolderRole").toString().trim();
+
+        //email check
+        List<AccountDto> allAccounts = getAllAccounts();
+        boolean emailExists = allAccounts.stream()
+                .anyMatch(acc -> acc.getAccountHolderEmailAddress().equals(accountHolderEmailAddress));
+
+        if (emailExists) {
+            throw new IllegalArgumentException("Account with this Email already exists.");
+        }
 
         AccountDto accountDto = new AccountDto();
         accountDto.setAccountHolderName(accountHolderName);
@@ -89,7 +98,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountDto getAccountById(Long id) throws Exception {
         Account foundAccount = accountRepository.findById(id)
-                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist"));
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist."));
 
         Account decryptedAccount = Mapper.mapToDecryptedAccount(foundAccount,accountCredRepository);
         return Mapper.mapToAccountDto(decryptedAccount);
@@ -98,7 +107,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountDto depositAmount(Long id, double amount) throws Exception {
         Account foundAccount = accountRepository.findById(id)
-                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist"));
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist."));
 
         Account decryptedAccount = Mapper.mapToDecryptedAccount(foundAccount,accountCredRepository);
         double curAmount = Double.valueOf(decryptedAccount.getBalance());
@@ -116,7 +125,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountDto withdrawAmount(Long id, double amount) throws Exception {
         Account foundAccount = accountRepository.findById(id)
-                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist"));
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist."));
 
         Account decryptedAccount = Mapper.mapToDecryptedAccount(foundAccount,accountCredRepository);
         double curAmount = Double.valueOf(decryptedAccount.getBalance());
@@ -124,7 +133,7 @@ public class AccountServiceImpl implements AccountService {
         if (curAmount < amount) {
             Transaction transaction =  new Transaction(id,id,String.valueOf(amount),"withdraw failed", foundAccount.getAesEncryptedKey());
             transactionRepository.save(Mapper.mapToEncryptedTransaction(transaction,accountCredRepository));
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient Balance");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient Balance.");
         }else {
             curAmount-=amount;
             decryptedAccount.setBalance(String.valueOf(curAmount));
@@ -151,7 +160,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public void deleteAccountById(Long id) {
         Account foundAccount = accountRepository.findById(id)
-                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist"));
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist."));
 
         accountRepository.deleteById(id);
         accountCredRepository.deleteById(id);
@@ -204,9 +213,9 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountDto sendToAccount(Long senderId, Long receiverId, Double amount) throws Exception {
         Account sender = accountRepository.findById(senderId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sender Account does not exist"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sender Account does not exist."));
         Account receiver = accountRepository.findById(receiverId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receiver Account does not exist"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receiver Account does not exist."));
 
         Account decryptedSenderAccount = Mapper.mapToDecryptedAccount(sender, accountCredRepository);
         Account decryptedReceiverAccount = Mapper.mapToDecryptedAccount(receiver, accountCredRepository);
@@ -216,7 +225,7 @@ public class AccountServiceImpl implements AccountService {
         if (curAmountSender < amount) {
             Transaction transaction = new Transaction(senderId, receiverId, String.valueOf(amount), "failed", sender.getAesEncryptedKey());
             transactionRepository.save(Mapper.mapToEncryptedTransaction(transaction, accountCredRepository));
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient Balance");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient Balance.");
         } else {
             curAmountSender -= amount;
             curAmountReceiver += amount;
@@ -238,9 +247,9 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public void requestFromAccount(Long receiverId, Long senderId, Double amount) throws Exception{
         Account receiver = accountRepository.findById(receiverId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receiver Account does not exist"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receiver Account does not exist."));
         Account sender = accountRepository.findById(senderId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sender Account does not exist"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sender Account does not exist."));
 
         Transaction transaction = new Transaction(senderId, receiverId, String.valueOf(amount), "pending", sender.getAesEncryptedKey());
         transactionRepository.save(Mapper.mapToEncryptedTransaction(transaction, accountCredRepository));
@@ -293,16 +302,16 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountDto executePendingTransaction(Long transId) throws Exception {
         Transaction transaction = transactionRepository.findById(transId)
-                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction does not exist"));
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction does not exist."));
 
         if (!transaction.getStatus().equals("pending")) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction is not pending");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction is not pending.");
         }
 
         Account receiver = accountRepository.findById(transaction.getReceiverId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receiver Account does not exist"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receiver Account does not exist."));
         Account sender = accountRepository.findById(transaction.getSenderId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sender Account does not exist"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sender Account does not exist."));
 
         Account decryptedReceiver = Mapper.mapToDecryptedAccount(receiver, accountCredRepository);
         Account decryptedSender = Mapper.mapToDecryptedAccount(sender, accountCredRepository);
@@ -316,7 +325,7 @@ public class AccountServiceImpl implements AccountService {
             Transaction failed = new Transaction(transaction.getSenderId(), transaction.getReceiverId(), String.valueOf(amount), "failed", sender.getAesEncryptedKey());
             transactionRepository.save(Mapper.mapToEncryptedTransaction(failed, accountCredRepository));
             transactionRepository.deleteById(transId);
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient Balance");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Insufficient Balance.");
         }else{
             senderBalance -= amount;
             receiverBalance += amount;
@@ -339,16 +348,16 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public AccountDto declinePendingTransaction(Long transId) throws Exception {
         Transaction transaction = transactionRepository.findById(transId)
-                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction does not exist"));
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction does not exist."));
 
         if (!transaction.getStatus().equals("pending")) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction is not pending");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction is not pending.");
         }
 
         Account receiver = accountRepository.findById(transaction.getReceiverId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receiver Account does not exist"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Receiver Account does not exist."));
         Account sender = accountRepository.findById(transaction.getSenderId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sender Account does not exist"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Sender Account does not exist."));
 
         Transaction decryptedTransaction = Mapper.mapToDecryptedTransaction(transaction,accountCredRepository);
         double amount = Double.valueOf(decryptedTransaction.getAmount());
@@ -363,7 +372,7 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public boolean matchPassword(Long id, String pass) throws Exception {
         AccountCred acc = accountCredRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist."));
 
         return HashingUtil.verifyPassword(pass,acc.getHashedUserPassword());
     }
@@ -371,9 +380,21 @@ public class AccountServiceImpl implements AccountService {
     @Override
     public void deleteTransactionById(Long transId) {
         Transaction foundTrans = transactionRepository.findById(transId)
-                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction does not exist"));
+                .orElseThrow(()-> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transaction does not exist."));
 
         transactionRepository.deleteById(transId);
+    }
+
+    @Override
+    public Long findIdByEmail(String email) throws Exception {
+        List<AccountDto> allAccounts = getAllAccounts();
+
+        for (AccountDto dto : allAccounts) {
+            if (dto.getAccountHolderEmailAddress().equalsIgnoreCase(email.trim())) {
+                return dto.getAccountId();
+            }
+        }
+        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account with this Email does not exist.");
     }
 
 }

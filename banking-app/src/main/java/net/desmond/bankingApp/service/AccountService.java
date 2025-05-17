@@ -46,5 +46,7 @@ public interface AccountService {
     boolean matchPassword(Long id, String pass) throws Exception;
 
     void deleteTransactionById(Long transId);
+
+    Long findIdByEmail(String email) throws Exception;
 }
 
