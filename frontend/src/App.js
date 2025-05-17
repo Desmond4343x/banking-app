@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Link, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Link} from 'react-router-dom';
 import CreateAccount from './CreateAccount';
 import Login from './Login';
 import UserInfo from './UserInfo';
@@ -11,6 +11,7 @@ import PendingTransactionsSend from './PendingTransactionsSend';
 import PendingTransactionsRecieve from './PendingTransactionsRecieve';
 import WithdrawMoney from './WithdrawMoney';
 import DepositMoney from './DepositMoney';
+import Help from './Help';
 
 const App = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem("token"));
@@ -60,7 +61,7 @@ const App = () => {
                 <li style={{ marginTop: '35px' }}><Link to="/pendingapprovals" style={{ textDecoration: 'none' }}>Pending Approvals</Link></li>
                 <li style={{ marginTop: '5px' }}><Link to="/pendingrequests" style={{ textDecoration: 'none' }}>Pending Requests</Link></li>
                 <li style={{ marginTop: '35px' }}><Link to="/transactionhistory" style={{ textDecoration: 'none' }}>Transaction History</Link></li>
-                <li style={{ marginTop: '60px' }}><Link to="#" style={{ textDecoration: 'none' }}>Help</Link></li>
+                <li style={{ marginTop: '60px' }}><Link to="/help" style={{ textDecoration: 'none' }}>Help</Link></li>
                 <li  style={{ marginTop: '5px' }}>
                   <Link to="/" onClick={handleLogout} style={{ textDecoration: 'none' }}>Logout</Link>
                 </li>
@@ -83,6 +84,7 @@ const App = () => {
             <Route path="/pendingrequests" element={<PendingTransactionsRecieve />} />
             <Route path="/depositmoney" element={<DepositMoney />} />
             <Route path="/withdrawmoney" element={<WithdrawMoney />} />
+            <Route path="/help" element={<Help />} />
           </Routes>
         </div>
       </div>

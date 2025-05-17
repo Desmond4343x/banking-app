@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 const lightenColor = (color, percent) => {
   let num = parseInt(color.replace('#', ''), 16),
@@ -24,6 +26,7 @@ const TransactionHistory = () => {
   const [transactions, setTransactions] = useState([]);
   const [filteredTransactions, setFilteredTransactions] = useState([]);
   const [userAccountId, setUserAccountId] = useState(null);
+  const [userName, setUserName] = useState('');
   const [filters, setFilters] = useState({
     transId: '',
     senderId: '',
@@ -50,6 +53,7 @@ const TransactionHistory = () => {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserAccountId(res.data.accountId);
+        setUserName(res.data.accountHolderName);
       } catch (error) {
         console.error('Failed to fetch account info:', error);
       }
@@ -57,6 +61,119 @@ const TransactionHistory = () => {
 
     fetchAccountId();
   }, [token]);
+
+  const downloadPDF = () => {
+    const {
+    transId,
+    senderId,
+    receiverId,
+    status,
+    month: selectedMonth,
+    sentOnly,
+    receivedOnly,
+  } = filters;
+
+    const doc = new jsPDF();
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(40, 40, 40);
+    doc.text('Transaction History', 14, 20);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text('Account ID:', 14,  30 );
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${userAccountId}`, 39, 30); 
+
+    doc.setFont('helvetica', 'bold');
+    doc.text('Name:', 14, 36);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${userName}`, 28, 36); 
+
+    //formatting date
+    const dateObj = new Date();
+    const day = dateObj.getDate();
+    const mnth = dateObj.toLocaleString('default', { month: 'long' });
+    const year = dateObj.getFullYear();
+    const formattedDate = `${day} ${mnth}, ${year}`;
+
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Date:`, 14, 42);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${formattedDate}`, 25, 42);
+
+
+    const tableColumn = ["Transaction ID", "Sender ID", "Receiver ID", "Amount", "Status", "Timestamp"];
+    const tableRows = filteredTransactions.map(txn => [
+      txn.transId,
+      txn.senderId,
+      txn.receiverId,
+      txn.amount,
+      txn.status,
+      txn.timestamp,
+    ]);
+
+    const getRowColor = (txn) => {
+      const status = txn.status.toLowerCase();
+
+      if (status === 'declined') return [244, 204, 204];        // pink
+      if (status === 'pending') return [255, 249, 196];         // yellow
+      if (status === 'deposit') return [200, 230, 201];         // green
+      if (status === 'withdraw') return [255, 209, 179];        // red tint
+      if (txn.senderId === userAccountId) return [255, 209, 179];  // red tint
+      if (txn.receiverId === userAccountId) return [200, 230, 201]; // green tint
+
+      return [255, 255, 255]; // default white
+    };
+
+    const activeFilters = [];
+
+    if (transId) activeFilters.push(`Transaction ID = ${transId}`);
+    if (senderId) activeFilters.push(`Sender ID = ${senderId}`);
+    if (receiverId) activeFilters.push(`Receiver ID = ${receiverId}`);
+
+    if (status) {
+      const selectedStatuses = Object.entries(status)
+        .filter(([key, value]) => value)
+        .map(([key]) => key.charAt(0).toUpperCase() + key.slice(1));
+      if (selectedStatuses.length > 0) {
+        activeFilters.push(`Status = ${selectedStatuses.join(', ')}`);
+      }
+    }
+
+    if (selectedMonth) activeFilters.push(`Month = ${selectedMonth}`);
+    if (sentOnly) activeFilters.push(`Sent Only`);
+    if (receivedOnly) activeFilters.push(`Received Only`);
+
+    const filtersLine = activeFilters.length > 0
+      ? `Filters Applied: ${activeFilters.join(' | ')}`
+      : 'Filters Applied: None';
+
+    // Draw on PDF
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'italic');
+    doc.setTextColor(80, 80, 80);
+    doc.text(doc.splitTextToSize(filtersLine, 180), 14, 52);
+
+    doc.autoTable({
+      startY: 58,
+      head: [tableColumn],
+      body: tableRows,
+      styles: {
+        fontSize: 10,
+      },
+      didParseCell: function (data) {
+        if (data.section === 'body') {
+          const txn = filteredTransactions[data.row.index];
+          const bgColor = getRowColor(txn);
+          data.cell.styles.fillColor = bgColor;
+        }
+      }
+    });
+
+    doc.save('transaction_history.pdf');
+  };
 
   useEffect(() => {
     if (!userAccountId) return;
@@ -90,9 +207,9 @@ const TransactionHistory = () => {
     } = filters;
 
     const filtered = transactions.filter((txn) => {
-      const matchTransId = transId ? txn.transId.toString().includes(transId) : true;
-      const matchSenderId = senderId ? txn.senderId.toString().includes(senderId) : true;
-      const matchReceiverId = receiverId ? txn.receiverId.toString().includes(receiverId) : true;
+      const matchTransId = transId ? txn.transId.toString().trim() === transId.trim() : true;
+      const matchSenderId = senderId ? txn.senderId.toString().trim() === senderId.trim() : true;
+      const matchReceiverId = receiverId ? txn.receiverId.toString().trim() === receiverId.trim() : true;
       const matchStatus = Object.values(status).some(Boolean)
         ? status[txn.status.toLowerCase()]
         : true;
@@ -356,6 +473,11 @@ const TransactionHistory = () => {
         )}
       </div>
 
+      <div style={{ display: 'flex', justifyContent: 'flex-start', marginBottom: '10px' }}>
+        <button onClick={downloadPDF}>Download as PDF</button>
+      </div>
+
+
       <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead style={{ backgroundColor: '#f0f0f0', textAlign: 'left' }}>
@@ -378,9 +500,9 @@ const TransactionHistory = () => {
                   cursor: 'pointer',
                 }}
                 onMouseEnter={(e) => {
-  const original = getRowStyle(txn).backgroundColor || '#fff';
-  e.currentTarget.style.backgroundColor = lightenColor(original, 0.1);
-}}
+                  const original = getRowStyle(txn).backgroundColor || '#fff';
+                  e.currentTarget.style.backgroundColor = lightenColor(original, 0.1);
+                }}
                 onMouseLeave={(e) => {
                   const style = getRowStyle(txn);
                   e.currentTarget.style.backgroundColor = style.backgroundColor || '';
