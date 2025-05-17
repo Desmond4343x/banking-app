@@ -42,7 +42,11 @@ const CreateAccount = () => {
     } catch (err) {
       console.error(err);
       setIsError(true);
-      setMessage('Error creating account. Please check your input or try again later.');
+      if (err.response && err.response.data) {
+        setMessage(err.response.data);
+      } else {
+        setMessage('Error creating account. Please check your input or try again later.');
+      }
     }
   };
 
