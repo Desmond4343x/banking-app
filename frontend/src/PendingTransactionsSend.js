@@ -87,7 +87,7 @@ const PendingTransactions = () => {
         <div style={{ color: 'red', marginBottom: '10px' }}>{errorMessage}</div>
       )}
 
-      <div style={{ maxHeight: '400px', overflowY: 'auto' }}>
+      <div style={{ maxHeight: '500px', overflowY: 'auto' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '14px' }}>
           <thead style={{ backgroundColor: '#f0f0f0', textAlign: 'left' }}>
             <tr>
