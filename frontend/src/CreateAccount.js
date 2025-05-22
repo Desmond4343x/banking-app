@@ -38,7 +38,7 @@ const CreateAccount = () => {
       const res = await axios.post('http://localhost:8080/bank', formData);
       const createdId = res.data.accountId;
       setIsError(false);
-      setMessage(`Account created successfully! Your Account ID is ${createdId}.`);
+      setMessage(`Verification Mail has been sent to your Email Address. Your Account ID is ${createdId}.`);
     } catch (err) {
       console.error(err);
       setIsError(true);
