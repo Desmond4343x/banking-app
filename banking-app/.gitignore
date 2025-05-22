@@ -34,3 +34,4 @@ build/
 
 # Ignore Spring Boot config
 src/main/resources/application.properties
+.env
