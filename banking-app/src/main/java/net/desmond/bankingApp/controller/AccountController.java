@@ -14,6 +14,7 @@ import net.desmond.bankingApp.utils.EmailService;
 import net.desmond.bankingApp.utils.HashingUtil;
 import net.desmond.bankingApp.utils.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -45,6 +46,9 @@ public class AccountController {
         this.accountRepository = accountRepository;
         this.accountCredRepository = accountCredRepository;
     }
+
+    @Value("${BACKEND_URL}")
+    private String backendUrl;
 
     //add account rest api
     @PostMapping
@@ -723,7 +727,7 @@ public class AccountController {
             String verificationToken = UUID.randomUUID().toString();
             decrypted.setVerificationStatus(verificationToken); // unverified
 
-            String link = "http://localhost:8080/bank/verify?id=" + decrypted.getAccountId()
+            String link = backendUrl+"/bank/verify?id=" +decrypted.getAccountId()
                     + "&token=" + URLEncoder.encode(verificationToken, StandardCharsets.UTF_8);
 
             emailService.sendVerificationEmail(

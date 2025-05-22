@@ -13,7 +13,7 @@ public class EmailService {
 
     public void sendVerificationEmail(String toEmail, String subject, String body) {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom("desmondpinkman31@gmail.com");
+        message.setFrom("${SILVERSTONE_EMAIL}");
         message.setTo(toEmail);
         message.setSubject(subject);
         message.setText(body);

@@ -30,6 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Value;
 
 @Service
 public class AccountServiceImpl implements AccountService {
@@ -46,6 +47,9 @@ public class AccountServiceImpl implements AccountService {
         this.accountCredRepository=accountCredRepository;
         this.transactionRepository = transactionRepository;
     }
+
+    @Value("${BACKEND_URL}")
+    private String backendUrl;
 
     @Override
     public AccountDto createAccount(Map<String, Object> requestData) throws Exception { //map of data from user, converted to accountDto
@@ -104,7 +108,7 @@ public class AccountServiceImpl implements AccountService {
 
         //send verification with unencrypted token
         Account decrypted = Mapper.mapToDecryptedAccount(encryptedAccount,accountCredRepository);
-        String link = "http://localhost:8080/bank/verify?id=" + decrypted.getAccountId() + "&token=" +  URLEncoder.encode(decrypted.getVerificationStatus(), StandardCharsets.UTF_8);
+        String link = backendUrl+"/bank/verify?id=" + decrypted.getAccountId() + "&token=" +  URLEncoder.encode(decrypted.getVerificationStatus(), StandardCharsets.UTF_8);
         emailService.sendVerificationEmail(decrypted.getAccountHolderEmailAddress(),
                 "Silverstone: Email Verification",
                 "\nClick this link to verify your email: " + link+"\nfrom Silverstone Support Team");
@@ -457,7 +461,7 @@ public class AccountServiceImpl implements AccountService {
         String tempPassword = generateRandomPassword(16);
 
         AccountCred accountCred = accountCredRepository.getReferenceById(id);
-        accountCred.setHashedUserPassword(HashingUtil.hashPassword("a"));
+        accountCred.setHashedUserPassword(HashingUtil.hashPassword(tempPassword));
         accountCredRepository.save(accountCred);
 
         emailService.sendVerificationEmail(decrypted.getAccountHolderEmailAddress(),
