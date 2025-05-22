@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+const api = process.env.REACT_APP_BACKEND_URL;
 
 const Login = ({ setIsLoggedIn }) => {
   const [idOrEmail, setIdOrEmail] = useState("");
@@ -33,7 +34,7 @@ const Login = ({ setIsLoggedIn }) => {
         ? { email: idOrEmail.toLowerCase().trim(), password }
         : { id: idOrEmail.trim(), password };
 
-      const response = await axios.post("http://localhost:8080/bank/login", payload);
+      const response = await axios.post(`${api}/bank/login`, payload);
       const token = response.data.token;
       localStorage.setItem("token", token);
 
@@ -68,7 +69,7 @@ const Login = ({ setIsLoggedIn }) => {
       : { id: idOrEmail.trim() };
 
     try {
-      await axios.post("http://localhost:8080/bank/forgot-password", payload);
+      await axios.post(`${api}/bank/forgot-password`, payload);
       setIsError(false);
       setMessage("Temporary password sent to your registered email.");
     } catch (error) {
@@ -96,7 +97,7 @@ const Login = ({ setIsLoggedIn }) => {
             if (useEmailLogin) {
               setIdOrEmail(value);
             } else {
-              setIdOrEmail(value.replace(/\D/g, "")); // Only digits for ID
+              setIdOrEmail(value.replace(/\D/g, "")); 
             }
           }}
         />

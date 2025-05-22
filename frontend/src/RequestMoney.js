@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+const api = process.env.REACT_APP_BACKEND_URL;
 
 const RequestMoney = () => {
   const [senderId, setSenderId] = useState('');
@@ -13,7 +14,7 @@ const RequestMoney = () => {
   useEffect(() => {
     const fetchAccountId = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/bank/account', {
+        const res = await axios.get(`${api}/bank/account`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserAccountId(res.data.accountId);
@@ -49,7 +50,7 @@ const RequestMoney = () => {
 
     try {
       await axios.put(
-        'http://localhost:8080/bank/accounts/requestFrom',
+        `${api}/bank/accounts/requestFrom`,
         {
           senderId: parseInt(senderId),
           amount: parseFloat(amount),

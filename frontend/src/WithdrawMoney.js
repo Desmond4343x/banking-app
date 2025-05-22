@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+const api = process.env.REACT_APP_BACKEND_URL;
 
 const WithdrawMoney = () => {
   const [amount, setAmount] = useState('');
@@ -12,7 +13,7 @@ const WithdrawMoney = () => {
   useEffect(() => {
     const fetchBalance = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/bank/account', {
+        const res = await axios.get(`${api}/bank/account`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -52,7 +53,7 @@ const WithdrawMoney = () => {
 
     try {
       const response = await axios.put(
-        'http://localhost:8080/bank/accounts/withdraw',
+        `${api}/bank/accounts/withdraw`,
         {
           amount: numericAmount,
         },
@@ -66,7 +67,7 @@ const WithdrawMoney = () => {
       setIsError(false);
       setMessage('Withdrawal successful!');
       setAmount('');
-      setBalance(response.data.balance); // Update new balance if returned
+      setBalance(response.data.balance);
     } catch (error) {
       console.error('Error withdrawing money:', error);
 

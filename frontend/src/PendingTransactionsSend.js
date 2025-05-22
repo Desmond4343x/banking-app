@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+const api = process.env.REACT_APP_BACKEND_URL;
 
 const PendingTransactions = () => {
   const [transactions, setTransactions] = useState([]);
@@ -8,11 +9,11 @@ const PendingTransactions = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const token = localStorage.getItem('token');
 
-  // Fetch ID balance
+
   useEffect(() => {
     const fetchUserDetails = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/bank/account', {
+        const res = await axios.get(`${api}/bank/account`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserId(res.data.accountId);
@@ -25,14 +26,14 @@ const PendingTransactions = () => {
     fetchUserDetails();
   }, [token]);
 
-  // Fetch where I'm sender
+
   useEffect(() => {
     if (!userId) return;
 
     const fetchPendingTransactions = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8080/bank/transactions/pending/${userId}/sent`,
+          `${api}/bank/transactions/pending/${userId}/sent`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         setTransactions(res.data);
@@ -44,7 +45,7 @@ const PendingTransactions = () => {
     fetchPendingTransactions();
   }, [userId, token]);
 
-  // Accept transaction (only if balance is sufficient)
+
   const handleAccept = async (transId, amount) => {
     if (balance < amount) {
       setErrorMessage('Insufficient balance');
@@ -53,7 +54,7 @@ const PendingTransactions = () => {
 
     try {
       await axios.put(
-        'http://localhost:8080/bank/transactions/pending/execute',
+        `${api}/bank/transactions/pending/execute`,
         { transId },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -65,11 +66,11 @@ const PendingTransactions = () => {
     }
   };
 
-  // Decline transaction
+
   const handleDecline = async (transId) => {
     try {
       await axios.put(
-        'http://localhost:8080/bank/transactions/pending/decline',
+        `${api}/bank/transactions/pending/decline`,
         { transId },
         { headers: { Authorization: `Bearer ${token}` } }
       );

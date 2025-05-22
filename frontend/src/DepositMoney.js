@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+const api = process.env.REACT_APP_BACKEND_URL;
 
 const DepositMoney = () => {
   const [amount, setAmount] = useState('');
@@ -12,7 +13,7 @@ const DepositMoney = () => {
   useEffect(() => {
     const fetchBalance = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/bank/account', {
+        const res = await axios.get(`${api}/bank/account`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -46,7 +47,7 @@ const DepositMoney = () => {
 
     try {
       const response = await axios.put(
-        'http://localhost:8080/bank/accounts/deposit',
+        `${api}/bank/accounts/deposit`,
         {
           amount: numericAmount,
         },
@@ -60,7 +61,7 @@ const DepositMoney = () => {
       setIsError(false);
       setMessage('Deposit successful!');
       setAmount('');
-      setBalance(response.data.balance); // Update new balance if returned
+      setBalance(response.data.balance); 
     } catch (error) {
       console.error('Error depositing money:', error);
 

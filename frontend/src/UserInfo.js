@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
+const api = process.env.REACT_APP_BACKEND_URL;
 
 const UserInfo = () => {
   const [user, setUser] = useState(null);
@@ -22,7 +23,7 @@ const UserInfo = () => {
 
     const fetchAccountId = async () => {
       try {
-        const res = await axios.get("http://localhost:8080/bank/account", {
+        const res = await axios.get(`${api}/bank/account`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserAccountId(res.data.accountId);
@@ -38,7 +39,7 @@ const UserInfo = () => {
     if (!token || !userAccountId) return;
 
     axios
-      .get(`http://localhost:8080/bank/accounts/${userAccountId}`, {
+      .get(`${api}/bank/accounts/${userAccountId}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -57,11 +58,11 @@ const UserInfo = () => {
 
     switch (activeForm) {
       case "address":
-        url = "http://localhost:8080/bank/change-address";
+        url = `${api}/bank/change-address`;
         payload = { address: formData.address };
         break;
       case "password":
-        url = "http://localhost:8080/bank/change-password";
+        url = `${api}/bank/change-password`;
         payload = {
           currentPassword: formData.currentPassword,
           newPassword: formData.newPassword,
@@ -73,7 +74,7 @@ const UserInfo = () => {
           setMessage("Please enter a valid email address.");
           return;
         }
-        url = "http://localhost:8080/bank/change-email";
+        url = `${api}/bank/change-email`;
         payload = { email: formData.email };
         break;
       default:

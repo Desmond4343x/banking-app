@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+const api = process.env.REACT_APP_BACKEND_URL;
 
 const SendMoney = () => {
   const [receiverId, setReceiverId] = useState('');
@@ -14,7 +15,7 @@ const SendMoney = () => {
   useEffect(() => {
     const fetchAccountData = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/bank/account', {
+        const res = await axios.get(`${api}/bank/account`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -61,7 +62,7 @@ const SendMoney = () => {
 
     try {
       const response = await axios.put(
-        'http://localhost:8080/bank/accounts/sendTo',
+        `${api}/bank/accounts/sendTo`,
         {
           receiverId: parseInt(receiverId),
           amount: numericAmount,
@@ -77,7 +78,7 @@ const SendMoney = () => {
       setMessage('Money sent successfully!');
       setReceiverId('');
       setAmount('');
-      setBalance(response.data.balance); // Update balance from response
+      setBalance(response.data.balance); 
     } catch (error) {
       console.error('Error sending money:', error);
 

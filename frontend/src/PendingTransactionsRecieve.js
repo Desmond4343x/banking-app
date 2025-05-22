@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+const api = process.env.REACT_APP_BACKEND_URL;
 
 const PendingTransactionsRecieve = () => {
   const [transactions, setTransactions] = useState([]);
@@ -7,11 +8,10 @@ const PendingTransactionsRecieve = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const token = localStorage.getItem('token');
 
-  // Fetch user ID
   useEffect(() => {
     const fetchUserId = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/bank/account', {
+        const res = await axios.get(`${api}/bank/account`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserId(res.data.accountId);
@@ -23,14 +23,14 @@ const PendingTransactionsRecieve = () => {
     fetchUserId();
   }, [token]);
 
-  // Fetch pending transactions where user is receiver
+
   useEffect(() => {
     if (!userId) return;
 
     const fetchPendingTransactions = async () => {
       try {
         const res = await axios.get(
-          `http://localhost:8080/bank/transactions/pending/${userId}/received`,
+          `${api}/bank/transactions/pending/${userId}/received`,
           {
             headers: { Authorization: `Bearer ${token}` },
           }
@@ -45,10 +45,10 @@ const PendingTransactionsRecieve = () => {
     fetchPendingTransactions();
   }, [userId, token]);
 
-  // Handle delete request
+  
   const handleDelete = async (transId) => {
     try {
-      await axios.delete(`http://localhost:8080/bank/transaction/${transId}`, {
+      await axios.delete(`${api}/bank/transaction/${transId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setTransactions(transactions.filter(txn => txn.transId !== transId));

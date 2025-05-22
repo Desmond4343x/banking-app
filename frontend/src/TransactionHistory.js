@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+const api = process.env.REACT_APP_BACKEND_URL;
 
 const lightenColor = (color, percent) => {
   let num = parseInt(color.replace('#', ''), 16),
@@ -49,7 +50,7 @@ const TransactionHistory = () => {
   useEffect(() => {
     const fetchAccountId = async () => {
       try {
-        const res = await axios.get('http://localhost:8080/bank/account', {
+        const res = await axios.get(`${api}/bank/account`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         setUserAccountId(res.data.accountId);
@@ -180,7 +181,7 @@ const TransactionHistory = () => {
 
     const fetchTransactions = async () => {
       try {
-        const res = await axios.get(`http://localhost:8080/bank/transactions/${userAccountId}`, {
+        const res = await axios.get(`${api}/bank/transactions/${userAccountId}`, {
           headers: {
             Authorization: `Bearer ${token}`,
           },

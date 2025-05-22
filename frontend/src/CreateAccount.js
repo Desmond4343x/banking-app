@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
+const api = process.env.REACT_APP_BACKEND_URL;
 
 const CreateAccount = () => {
   const [formData, setFormData] = useState({
@@ -26,7 +27,7 @@ const CreateAccount = () => {
     e.preventDefault();
     setMessage('');
 
-    // Validate all fields are filled
+
     const isAnyEmpty = Object.values(formData).some(value => value.trim() === '');
     if (isAnyEmpty) {
       setIsError(true);
@@ -35,7 +36,7 @@ const CreateAccount = () => {
     }
 
     try {
-      const res = await axios.post('http://localhost:8080/bank', formData);
+      const res = await axios.post(`${api}/bank`, formData);
       const createdId = res.data.accountId;
       setIsError(false);
       setMessage(`Verification Mail has been sent to your Email Address. Your Account ID is ${createdId}.`);
