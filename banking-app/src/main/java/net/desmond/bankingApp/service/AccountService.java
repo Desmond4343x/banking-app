@@ -52,5 +52,7 @@ public interface AccountService {
     boolean matchToken(Long id, String token) throws Exception;
 
     void markAsVerified(Long id) throws Exception;
+
+    void setTemporaryPassword(Map<String, Object> request) throws Exception;
 }
 

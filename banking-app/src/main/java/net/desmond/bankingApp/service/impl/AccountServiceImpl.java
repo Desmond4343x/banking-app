@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.PublicKey;
+import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -104,7 +105,9 @@ public class AccountServiceImpl implements AccountService {
         //send verification with unencrypted token
         Account decrypted = Mapper.mapToDecryptedAccount(encryptedAccount,accountCredRepository);
         String link = "http://localhost:8080/bank/verify?id=" + decrypted.getAccountId() + "&token=" +  URLEncoder.encode(decrypted.getVerificationStatus(), StandardCharsets.UTF_8);
-        emailService.sendVerificationEmail(decrypted.getAccountHolderEmailAddress(), "Silverstone: Email Verification", "\nClick this link to verify your email: " + link+"\nfrom Silverstone Support Team");
+        emailService.sendVerificationEmail(decrypted.getAccountHolderEmailAddress(),
+                "Silverstone: Email Verification",
+                "\nClick this link to verify your email: " + link+"\nfrom Silverstone Support Team");
 
         return Mapper.mapToAccountDto(saved);
     }
@@ -408,7 +411,7 @@ public class AccountServiceImpl implements AccountService {
                 return dto.getAccountId();
             }
         }
-        throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Account with this Email does not exist.");
+        return null;
     }
 
     @Override
@@ -430,6 +433,48 @@ public class AccountServiceImpl implements AccountService {
         decrypted.setVerificationStatus("verified");
         Account encrypted = Mapper.mapToEncryptedAccount(decrypted,accountCredRepository);
         accountRepository.save(encrypted);
+    }
+
+    @Override
+    public void setTemporaryPassword(Map<String, Object> request) throws Exception {
+        Long id;
+
+        if (request.containsKey("email")) {
+            String email = request.get("email").toString().trim().toLowerCase();
+            id = findIdByEmail(email);
+        } else {
+            id = Long.valueOf(request.get("id").toString());
+        }
+
+        Account account = accountRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist."));
+        Account decrypted = Mapper.mapToDecryptedAccount(account,accountCredRepository);
+
+        if (!"verified".equalsIgnoreCase(decrypted.getVerificationStatus())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Account is unverified. Please verify account first.");
+        }
+
+        String tempPassword = generateRandomPassword(16);
+
+        AccountCred accountCred = accountCredRepository.getReferenceById(id);
+        accountCred.setHashedUserPassword(HashingUtil.hashPassword("a"));
+        accountCredRepository.save(accountCred);
+
+        emailService.sendVerificationEmail(decrypted.getAccountHolderEmailAddress(),
+                "Silverstone - Temporary Password", "\nYour temporary password is: " + tempPassword +
+                "\nUse this to log in and update your password immediately.\n\nfrom Silverstone Support Team");
+
+    }
+
+    public String generateRandomPassword(int length) {
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@#$!";
+        SecureRandom random = new SecureRandom();
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < length; i++) {
+            sb.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return sb.toString();
     }
 
 }

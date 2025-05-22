@@ -4,25 +4,32 @@ import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
 import net.desmond.bankingApp.dto.AccountDto;
 import net.desmond.bankingApp.entity.Account;
+import net.desmond.bankingApp.entity.AccountCred;
 import net.desmond.bankingApp.mapper.Mapper;
 import net.desmond.bankingApp.repository.AccountRepository;
 import net.desmond.bankingApp.secureVault.AccountCredRepository;
 import net.desmond.bankingApp.service.AccountService;
 import net.desmond.bankingApp.transactions.TransactionDto;
+import net.desmond.bankingApp.utils.EmailService;
+import net.desmond.bankingApp.utils.HashingUtil;
 import net.desmond.bankingApp.utils.JwtUtil;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.*;
 
 @CrossOrigin(origins = "http://localhost:3000")
 @RestController //ensures JSON response
 @RequestMapping("/bank")
 public class AccountController {
+
+    @Autowired
+    private EmailService emailService;
 
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<String> handleIllegalArgument(IllegalArgumentException ex) {
@@ -609,6 +616,131 @@ public class AccountController {
         }
     }
 
+    @PostMapping("/forgot-password")
+    public ResponseEntity<String> forgotPassword(@RequestBody Map<String, Object> request) throws Exception {
+        accountService.setTemporaryPassword(request);
+        return ResponseEntity.ok("Temporary password has been sent to your verified email.");
+    }
+
+    @PostMapping("/change-address")
+    public ResponseEntity<?> changeAddress(@RequestHeader("Authorization") String token,
+                                           @RequestBody Map<String, String> body) {
+        try {
+            String jwt = token.replace("Bearer ", "");
+            Long jwtUserId = JwtUtil.extractUserId(jwt);
+            String newAddress = body.get("address");
+
+            if (newAddress == null || newAddress.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("detail", "Address cannot be empty."));
+            }
+
+            Account account = accountRepository.findById(jwtUserId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist."));
+            Account decrypted = Mapper.mapToDecryptedAccount(account,accountCredRepository);
+
+            decrypted.setAccountHolderAddress(newAddress);
+            accountRepository.save(Mapper.mapToEncryptedAccount(decrypted,accountCredRepository));
+
+            return ResponseEntity.ok(Map.of("message", "Address updated successfully."));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("detail", "Failed to update address."));
+        }
+    }
+
+    @PostMapping("/change-password")
+    public ResponseEntity<?> changePassword(@RequestHeader("Authorization") String token,
+                                            @RequestBody Map<String, String> body) {
+        try {
+            String jwt = token.replace("Bearer ", "");
+            Long jwtUserId = JwtUtil.extractUserId(jwt);
+            String currentPassword = body.get("currentPassword");
+            String newPassword = body.get("newPassword");
+
+            if (currentPassword == null || currentPassword.trim().isEmpty() ||
+                    newPassword == null || newPassword.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("detail", "Current and new passwords cannot be empty."));
+            }
+
+            boolean isMatch = accountService.matchPassword(jwtUserId, currentPassword);
+            if (!isMatch) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("detail", "Current password is incorrect."));
+            }
+
+            AccountCred account = accountCredRepository.findById(jwtUserId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist."));
+
+            String hashedNewPassword = HashingUtil.hashPassword(newPassword);
+            account.setHashedUserPassword(hashedNewPassword);
+            accountCredRepository.save(account);
+
+            return ResponseEntity.ok(Map.of("message", "Password updated successfully."));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("detail", "Failed to update password."));
+        }
+    }
+
+    @PostMapping("/change-email")
+    public ResponseEntity<?> changeEmail(@RequestHeader("Authorization") String token,
+                                         @RequestBody Map<String, String> body) {
+        try {
+            String jwt = token.replace("Bearer ", "");
+            Long jwtUserId = JwtUtil.extractUserId(jwt);
+            String newEmail = body.get("email");
+
+            if (newEmail == null || newEmail.trim().isEmpty()) {
+                return ResponseEntity.badRequest().body(Map.of("detail", "Email address cannot be empty."));
+            }
+
+            newEmail = newEmail.trim().toLowerCase();
+
+            // Check if new email is already in use by another account
+            Long existingId = null;
+            try {
+                existingId = accountService.findIdByEmail(newEmail);
+            } catch (ResponseStatusException e) {
+                if (e.getStatusCode() != HttpStatus.NOT_FOUND) {
+                    throw e; // Re-throw other errors
+                }
+            }
+
+            if (existingId != null && !Objects.equals(existingId, jwtUserId)) {
+                return ResponseEntity.badRequest().body(Map.of("detail", "This email is already registered with another account."));
+            }
+
+            if (Objects.equals(existingId, jwtUserId)) {
+                return ResponseEntity.badRequest().body(Map.of("detail", "New Email address cannot be same as current Email address."));
+            }
+
+            // Proceed with email update and verification
+            Account account = accountRepository.findById(jwtUserId)
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Account does not exist."));
+
+            Account decrypted = Mapper.mapToDecryptedAccount(account, accountCredRepository);
+            decrypted.setAccountHolderEmailAddress(newEmail);
+
+            String verificationToken = UUID.randomUUID().toString();
+            decrypted.setVerificationStatus(verificationToken); // unverified
+
+            String link = "http://localhost:8080/bank/verify?id=" + decrypted.getAccountId()
+                    + "&token=" + URLEncoder.encode(verificationToken, StandardCharsets.UTF_8);
+
+            emailService.sendVerificationEmail(
+                    newEmail,
+                    "Silverstone: Email Verification",
+                    "\nClick this link to verify your email: " + link + "\n\nFrom Silverstone Support Team"
+            );
+
+            accountRepository.save(Mapper.mapToEncryptedAccount(decrypted, accountCredRepository));
+
+            return ResponseEntity.ok(Map.of("message", "Verification mail has been sent to the new Email address. Please verify to activate it."));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("detail", "Failed to update email address."));
+        }
+    }
 
 }
 
