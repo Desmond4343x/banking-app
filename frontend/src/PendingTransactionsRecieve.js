@@ -6,6 +6,7 @@ const PendingTransactionsRecieve = () => {
   const [transactions, setTransactions] = useState([]);
   const [userId, setUserId] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
+  const [loading, setLoading] = useState(true);
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -18,11 +19,11 @@ const PendingTransactionsRecieve = () => {
       } catch (err) {
         console.error('Error fetching user ID:', err);
         setErrorMessage('Failed to fetch user information.');
+        setLoading(false);
       }
     };
     fetchUserId();
   }, [token]);
-
 
   useEffect(() => {
     if (!userId) return;
@@ -39,13 +40,14 @@ const PendingTransactionsRecieve = () => {
       } catch (err) {
         console.error('Error fetching pending transaction requests:', err);
         setErrorMessage('Failed to fetch pending transaction requests.');
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchPendingTransactions();
   }, [userId, token]);
 
-  
   const handleDelete = async (transId) => {
     try {
       await axios.delete(`${api}/bank/transaction/${transId}`, {
@@ -79,7 +81,13 @@ const PendingTransactionsRecieve = () => {
             </tr>
           </thead>
           <tbody>
-            {transactions.length === 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan="6" style={{ padding: '10px', textAlign: 'center' }}>
+                  Loading requests...
+                </td>
+              </tr>
+            ) : transactions.length === 0 ? (
               <tr>
                 <td colSpan="6" style={{ padding: '10px', textAlign: 'center' }}>
                   No pending Requests.

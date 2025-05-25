@@ -36,7 +36,13 @@ const RequestMoney = () => {
       return;
     }
 
-    if (parseInt(senderId) === userAccountId) {
+    if (userAccountId === null) {
+      setIsError(true);
+      setMessage('Account info not loaded yet. Please try again in a few seconds.');
+      return;
+    }
+
+    if (parseInt(senderId, 10) === Number(userAccountId)) {
       setIsError(true);
       setMessage('You cannot request money from your own account.');
       return;

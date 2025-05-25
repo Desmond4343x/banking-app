@@ -7,8 +7,9 @@ const PendingTransactions = () => {
   const [userId, setUserId] = useState(null);
   const [balance, setBalance] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
-  const token = localStorage.getItem('token');
+  const [loading, setLoading] = useState(true); // NEW: loading state
 
+  const token = localStorage.getItem('token');
 
   useEffect(() => {
     const fetchUserDetails = async () => {
@@ -26,11 +27,11 @@ const PendingTransactions = () => {
     fetchUserDetails();
   }, [token]);
 
-
   useEffect(() => {
     if (!userId) return;
 
     const fetchPendingTransactions = async () => {
+      setLoading(true); // Start loading before API call
       try {
         const res = await axios.get(
           `${api}/bank/transactions/pending/${userId}/sent`,
@@ -39,6 +40,8 @@ const PendingTransactions = () => {
         setTransactions(res.data);
       } catch (err) {
         console.error('Failed to fetch pending transactions:', err);
+      } finally {
+        setLoading(false); // Done loading
       }
     };
 
@@ -101,30 +104,37 @@ const PendingTransactions = () => {
             </tr>
           </thead>
           <tbody>
-            {transactions.map((txn) => (
-              <tr key={txn.transId}>
-                <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.transId}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.receiverId}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>₹{txn.amount}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.status}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.timestamp}</td>
-                <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>
-                  <button
-                    onClick={() => handleAccept(txn.transId, txn.amount)}
-                    style={{ marginRight: '8px' }}
-                  >
-                    Accept
-                  </button>
-                  <button onClick={() => handleDecline(txn.transId)}>Decline</button>
-                </td>
-              </tr>
-            ))}
-            {transactions.length === 0 && (
+            {loading ? (
               <tr>
                 <td colSpan="6" style={{ padding: '10px', textAlign: 'center' }}>
-                  No pending Approvals.
+                  Loading transactions...
                 </td>
               </tr>
+            ) : transactions.length === 0 ? (
+              <tr>
+                <td colSpan="6" style={{ padding: '10px', textAlign: 'center' }}>
+                  No pending approvals.
+                </td>
+              </tr>
+            ) : (
+              transactions.map((txn) => (
+                <tr key={txn.transId}>
+                  <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.transId}</td>
+                  <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.receiverId}</td>
+                  <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>₹{txn.amount}</td>
+                  <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.status}</td>
+                  <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.timestamp}</td>
+                  <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>
+                    <button
+                      onClick={() => handleAccept(txn.transId, txn.amount)}
+                      style={{ marginRight: '8px' }}
+                    >
+                      Accept
+                    </button>
+                    <button onClick={() => handleDecline(txn.transId)}>Decline</button>
+                  </td>
+                </tr>
+              ))
             )}
           </tbody>
         </table>

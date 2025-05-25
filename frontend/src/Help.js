@@ -45,7 +45,7 @@ const Help = () => {
 
       <h3 style={{ marginBottom: '5px' }}>6. Contact</h3>
       <p style={{ marginTop: 0 }}>
-        For additional support, contact us at <span style={{ color: 'blue' }}>support@silverstone.com</span>
+        For additional support, contact us at <span style={{ color: 'blue' }}>desmondpinkman31@gmail.com</span>
       </p>
     </div>
   );
