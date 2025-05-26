@@ -40,6 +40,12 @@ const SendMoney = () => {
       return;
     }
 
+    if (userAccountId === null) {
+      setIsError(true);
+      setMessage('Account info not loaded yet. Please try again in a few seconds.');
+      return;
+    }
+
     if (parseInt(receiverId) === userAccountId) {
       setIsError(true);
       setMessage('You cannot send money to your own account.');
