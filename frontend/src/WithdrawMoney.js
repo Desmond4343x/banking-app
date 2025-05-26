@@ -45,6 +45,12 @@ const WithdrawMoney = () => {
       return;
     }
 
+    if (balance === null) {
+      setIsError(true);
+      setMessage('Account info not loaded yet. Please try again in a few seconds.');
+      return;
+    }
+
     if (balance !== null && numericAmount > balance) {
       setIsError(true);
       setMessage('Insufficient balance.');

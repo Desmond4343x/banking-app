@@ -45,6 +45,12 @@ const DepositMoney = () => {
       return;
     }
 
+    if (balance === null) {
+      setIsError(true);
+      setMessage('Account info not loaded yet. Please try again in a few seconds.');
+      return;
+    }
+
     try {
       const response = await axios.put(
         `${api}/bank/accounts/deposit`,
