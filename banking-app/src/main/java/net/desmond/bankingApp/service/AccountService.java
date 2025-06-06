@@ -18,6 +18,8 @@ public interface AccountService {
     List<AccountDto> getAllAccounts() throws Exception;
 
     void deleteAccountById(Long id);
+    //should check if any pending transaction exist or not
+    //also details of deleted account should be preserved, clearer flow would be to set verified -> deleted, rather than deleting from db
 
     List<TransactionDto> getAllTransactions() throws Exception;
 
@@ -40,6 +42,7 @@ public interface AccountService {
     List<TransactionDto> getPendingReceivedTransactions(Long id) throws Exception;
 
     AccountDto executePendingTransaction(Long transId) throws Exception;
+    //only risk as api is unprotected, anyone with txn id can execute any with postman
 
     AccountDto declinePendingTransaction(Long transId) throws Exception;
 
@@ -54,5 +57,6 @@ public interface AccountService {
     void markAsVerified(Long id) throws Exception;
 
     void setTemporaryPassword(Map<String, Object> request) throws Exception;
+    //anyone at login page can set TempPassword, not good flow
 }
 

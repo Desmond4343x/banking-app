@@ -57,7 +57,7 @@ public class AccountServiceImpl implements AccountService {
         String balance = requestData.get("balance").toString().trim();
         String accountHolderAddress = requestData.get("accountHolderAddress").toString().trim();
         String accountHolderEmailAddress = requestData.get("accountHolderEmailAddress").toString().trim().toLowerCase();
-        String role = requestData.get("accountHolderRole").toString().trim();
+        String role = requestData.get("accountHolderRole").toString().toLowerCase().trim();
 
         //email check
         List<AccountDto> allAccounts = getAllAccounts();

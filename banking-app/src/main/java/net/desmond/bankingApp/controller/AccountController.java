@@ -24,8 +24,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-//@CrossOrigin(origins = "http://localhost:3000")
-@CrossOrigin(origins = "https://silverstone-dun.vercel.app")
+@CrossOrigin(origins = "http://localhost:3000")
+//@CrossOrigin(origins = "https://silverstone-dun.vercel.app")
 @RestController //ensures JSON response
 @RequestMapping("/bank")
 public class AccountController {
@@ -499,7 +499,6 @@ public class AccountController {
         }
     }
 
-
     //execute pending
     @PutMapping("/transactions/pending/execute")
     public ResponseEntity<?> executePendingTransaction(
@@ -744,6 +743,34 @@ public class AccountController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of("detail", "Failed to update email address."));
+        }
+    }
+
+    @GetMapping("/is-admin")
+    public ResponseEntity<?> isAdmin(
+            @RequestHeader(value = "Authorization",required = false) String token) {
+        try {
+            if (token == null || !token.startsWith("Bearer ")) {
+                throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Missing or malformed token.");
+            }
+
+            String jwt = token.substring(7);
+            String role = JwtUtil.extractRole(jwt);
+
+            if (!"admin".equals(role)) {
+                return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Access denied: Only admins can view all pending transactions.");
+            }
+
+            return ResponseEntity.ok(true);
+
+        } catch (ExpiredJwtException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Session expired. Please login again.");
+        } catch (JwtException | IllegalArgumentException e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid token. Please login again.");
+        } catch (ResponseStatusException e) {
+            return ResponseEntity.status(e.getStatusCode()).body(e.getReason());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Something went wrong.");
         }
     }
 
