@@ -24,8 +24,8 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-@CrossOrigin(origins = "http://localhost:3000")
-//@CrossOrigin(origins = "https://silverstone-dun.vercel.app")
+//@CrossOrigin(origins = "http://localhost:3000")
+@CrossOrigin(origins = "https://silverstone-dun.vercel.app")
 @RestController //ensures JSON response
 @RequestMapping("/bank")
 public class AccountController {
