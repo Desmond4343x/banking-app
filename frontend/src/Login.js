@@ -9,6 +9,7 @@ const Login = ({ setIsLoggedIn }) => {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [useEmailLogin, setUseEmailLogin] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const isValidEmail = (email) => /^\S+@\S+\.\S+$/.test(email);
@@ -16,16 +17,20 @@ const Login = ({ setIsLoggedIn }) => {
   const handleLogin = async (e) => {
     e.preventDefault();
     setMessage("");
+    setIsError(false);
+    setLoading(true);
 
     if (idOrEmail.trim() === "" || password.trim() === "") {
       setIsError(true);
       setMessage("Both fields are required.");
+      setLoading(false);
       return;
     }
 
     if (useEmailLogin && !isValidEmail(idOrEmail.trim())) {
       setIsError(true);
       setMessage("Please enter a valid email address.");
+      setLoading(false);
       return;
     }
 
@@ -45,22 +50,30 @@ const Login = ({ setIsLoggedIn }) => {
     } catch (error) {
       console.error("Login failed:", error);
       setIsError(true);
-
-      const detailMessage = error?.response?.data?.detail || "Invalid credentials. Please try again.";
+      const detailMessage =
+        error?.response?.data?.detail || "Invalid credentials. Please try again.";
       setMessage(detailMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleForgotPassword = async () => {
+    setMessage("");
+    setIsError(false);
+    setLoading(true);
+
     if (idOrEmail.trim() === "") {
       setIsError(true);
       setMessage("Please enter your Account ID or Email first.");
+      setLoading(false);
       return;
     }
 
     if (useEmailLogin && !isValidEmail(idOrEmail.trim())) {
       setIsError(true);
       setMessage("Please enter a valid email address.");
+      setLoading(false);
       return;
     }
 
@@ -75,9 +88,11 @@ const Login = ({ setIsLoggedIn }) => {
     } catch (error) {
       console.error("Forgot password failed:", error);
       setIsError(true);
-
-      const detailMessage = error?.response?.data?.detail || "Failed to send temporary password.";
+      const detailMessage =
+        error?.response?.data?.detail || "Failed to send temporary password.";
       setMessage(detailMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -85,19 +100,19 @@ const Login = ({ setIsLoggedIn }) => {
     <div style={{ padding: "20px" }}>
       <h2 style={{ marginBottom: "0" }}>Login</h2>
       <p style={{ marginTop: "0", fontSize: "16px", color: "#555" }}>
-        Please enter your {useEmailLogin ? "Email" : "Account ID"} and password.
+        Please enter your {useEmailLogin ? "Email Address" : "Account ID"} and password.
       </p>
       <form onSubmit={handleLogin}>
         <input
           type={useEmailLogin ? "email" : "text"}
-          placeholder={useEmailLogin ? "Email" : "Account ID"}
+          placeholder={useEmailLogin ? "Email Address" : "Account ID"}
           value={idOrEmail}
           onChange={(e) => {
             const value = e.target.value;
             if (useEmailLogin) {
               setIdOrEmail(value);
             } else {
-              setIdOrEmail(value.replace(/\D/g, "")); 
+              setIdOrEmail(value.replace(/\D/g, ""));
             }
           }}
         />
@@ -109,7 +124,9 @@ const Login = ({ setIsLoggedIn }) => {
           onChange={(e) => setPassword(e.target.value)}
         />
         <br />
-        <button type="submit">Login</button>
+        <button type="submit" disabled={loading}>
+          {loading ? "Loading..." : "Login"}
+        </button>
         <button
           type="button"
           style={{
@@ -121,6 +138,7 @@ const Login = ({ setIsLoggedIn }) => {
             cursor: "pointer",
           }}
           onClick={handleForgotPassword}
+          disabled={loading}
         >
           Forgot Password?
         </button>
@@ -133,6 +151,7 @@ const Login = ({ setIsLoggedIn }) => {
             setIdOrEmail("");
             setMessage("");
           }}
+          disabled={loading}
         >
           {useEmailLogin ? "Use Account ID instead" : "Use Email instead"}
         </button>
@@ -140,8 +159,8 @@ const Login = ({ setIsLoggedIn }) => {
           <p
             style={{
               color: isError ? "red" : "green",
+              fontSize:"14px",
               marginTop: "10px",
-              fontSize: "14px",
             }}
           >
             {message}

@@ -14,6 +14,7 @@ const CreateAccount = () => {
 
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -23,15 +24,26 @@ const CreateAccount = () => {
     }));
   };
 
+  const isValidEmail = (email) => /^\S+@\S+\.\S+$/.test(email);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage('');
-
+    setIsError(false);
+    setLoading(true);
 
     const isAnyEmpty = Object.values(formData).some(value => value.trim() === '');
     if (isAnyEmpty) {
       setIsError(true);
       setMessage('All fields are required.');
+      setLoading(false);
+      return;
+    }
+
+    if (!isValidEmail(formData.accountHolderEmailAddress.trim())) {
+      setIsError(true);
+      setMessage('Please enter a valid email address.');
+      setLoading(false);
       return;
     }
 
@@ -39,7 +51,7 @@ const CreateAccount = () => {
       const res = await axios.post(`${api}/bank`, formData);
       const createdId = res.data.accountId;
       setIsError(false);
-      setMessage(`Verification Mail has been sent to your Email Address. Your Account ID is ${createdId}.`);
+      setMessage(`Verification mail has been sent to your email address. Your Account ID is ${createdId}.`);
     } catch (err) {
       console.error(err);
       setIsError(true);
@@ -48,6 +60,8 @@ const CreateAccount = () => {
       } else {
         setMessage('Error creating account. Please check your input or try again later.');
       }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -60,12 +74,12 @@ const CreateAccount = () => {
       <form onSubmit={handleSubmit}>
         <input
           name="accountHolderName"
-          placeholder="Name"
+          placeholder="Full Name"
           onChange={handleChange}
         /><br />
         <input
           name="accountHolderEmailAddress"
-          placeholder="Email"
+          placeholder="Email Address"
           onChange={handleChange}
         /><br />
         <input
@@ -76,16 +90,18 @@ const CreateAccount = () => {
         /><br />
         <input
           name="accountHolderAddress"
-          placeholder="Address"
+          placeholder="Home Address"
           onChange={handleChange}
         /><br />
         <input
           name="balance"
           type="number"
-          placeholder="Balance"
+          placeholder="Starting Balance"
           onChange={handleChange}
         /><br />
-        <button type="submit">Create Account</button>
+        <button type="submit" disabled={loading} style={{ marginTop: '10px' }}>
+          {loading ? 'Loading...' : 'Create Account'}
+        </button>
         {message && (
           <p style={{
             color: isError ? 'red' : 'green',
