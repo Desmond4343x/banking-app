@@ -1,4 +1,4 @@
-# 💰 Banking App
+# 💰 Silverstone - Secure Digital Banking System
 
 Secure, modular, and scalable banking system with core features like user authentication, role-based access control, encrypted storage, and inter-user transactions.
 
