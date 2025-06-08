@@ -8,6 +8,7 @@ const RequestMoney = () => {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const [userAccountId, setUserAccountId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const token = localStorage.getItem('token');
 
@@ -28,29 +29,36 @@ const RequestMoney = () => {
 
   const handleRequest = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     setMessage('');
+    setIsSubmitting(true);
 
     if (!senderId.trim() || !amount.trim()) {
       setIsError(true);
       setMessage('Sender ID and amount are required.');
+      setIsSubmitting(false);
       return;
     }
 
     if (userAccountId === null) {
       setIsError(true);
       setMessage('Account info not loaded yet. Please try again in a few seconds.');
+      setIsSubmitting(false);
       return;
     }
 
     if (parseInt(senderId, 10) === Number(userAccountId)) {
       setIsError(true);
       setMessage('You cannot request money from your own account.');
+      setIsSubmitting(false);
       return;
     }
 
     if (parseFloat(amount) < 0) {
       setIsError(true);
       setMessage('Amount cannot be negative.');
+      setIsSubmitting(false);
       return;
     }
 
@@ -82,6 +90,8 @@ const RequestMoney = () => {
 
       setIsError(true);
       setMessage(errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -101,7 +111,9 @@ const RequestMoney = () => {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         /><br />
-        <button type="submit">Request</button>
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Requesting...' : 'Request'}
+        </button>
       </form>
       {message && (
         <p

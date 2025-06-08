@@ -7,6 +7,7 @@ const PendingTransactionsRecieve = () => {
   const [userId, setUserId] = useState(null);
   const [errorMessage, setErrorMessage] = useState('');
   const [loading, setLoading] = useState(true);
+  const [globalProcessing, setGlobalProcessing] = useState(false);
   const token = localStorage.getItem('token');
 
   useEffect(() => {
@@ -49,6 +50,10 @@ const PendingTransactionsRecieve = () => {
   }, [userId, token]);
 
   const handleDelete = async (transId) => {
+    if (globalProcessing) return;
+
+    setGlobalProcessing(true);
+
     try {
       await axios.delete(`${api}/bank/transaction/${transId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -57,6 +62,8 @@ const PendingTransactionsRecieve = () => {
     } catch (err) {
       console.error('Error deleting transaction:', err);
       setErrorMessage('Failed to delete the request.');
+    } finally {
+      setGlobalProcessing(false);
     }
   };
 
@@ -102,7 +109,12 @@ const PendingTransactionsRecieve = () => {
                   <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.status}</td>
                   <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>{txn.timestamp}</td>
                   <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>
-                    <button onClick={() => handleDelete(txn.transId)}>Delete</button>
+                    <button
+                      onClick={() => handleDelete(txn.transId)}
+                      disabled={globalProcessing}
+                    >
+                      Delete
+                    </button>
                   </td>
                 </tr>
               ))

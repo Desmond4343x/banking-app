@@ -7,7 +7,8 @@ const PendingTransactions = () => {
   const [userId, setUserId] = useState(null);
   const [balance, setBalance] = useState(0);
   const [errorMessage, setErrorMessage] = useState('');
-  const [loading, setLoading] = useState(true); // NEW: loading state
+  const [loading, setLoading] = useState(true);
+  const [globalProcessing, setGlobalProcessing] = useState(false);
 
   const token = localStorage.getItem('token');
 
@@ -31,7 +32,7 @@ const PendingTransactions = () => {
     if (!userId) return;
 
     const fetchPendingTransactions = async () => {
-      setLoading(true); // Start loading before API call
+      setLoading(true);
       try {
         const res = await axios.get(
           `${api}/bank/transactions/pending/${userId}/sent`,
@@ -41,19 +42,21 @@ const PendingTransactions = () => {
       } catch (err) {
         console.error('Failed to fetch pending transactions:', err);
       } finally {
-        setLoading(false); // Done loading
+        setLoading(false);
       }
     };
 
     fetchPendingTransactions();
   }, [userId, token]);
 
-
   const handleAccept = async (transId, amount) => {
+    if (globalProcessing) return;
     if (balance < amount) {
       setErrorMessage('Insufficient balance');
       return;
     }
+
+    setGlobalProcessing(true);
 
     try {
       await axios.put(
@@ -66,11 +69,16 @@ const PendingTransactions = () => {
       setErrorMessage('');
     } catch (err) {
       console.error('Failed to accept transaction:', err);
+    } finally {
+      setGlobalProcessing(false);
     }
   };
 
-
   const handleDecline = async (transId) => {
+    if (globalProcessing) return;
+
+    setGlobalProcessing(true);
+
     try {
       await axios.put(
         `${api}/bank/transactions/pending/decline`,
@@ -80,6 +88,8 @@ const PendingTransactions = () => {
       setTransactions(transactions.filter(t => t.transId !== transId));
     } catch (err) {
       console.error('Failed to decline transaction:', err);
+    } finally {
+      setGlobalProcessing(false);
     }
   };
 
@@ -127,11 +137,17 @@ const PendingTransactions = () => {
                   <td style={{ padding: '6px 8px', border: '1px solid #ddd' }}>
                     <button
                       onClick={() => handleAccept(txn.transId, txn.amount)}
+                      disabled={globalProcessing}
                       style={{ marginRight: '8px' }}
                     >
                       Accept
                     </button>
-                    <button onClick={() => handleDecline(txn.transId)}>Decline</button>
+                    <button
+                      onClick={() => handleDecline(txn.transId)}
+                      disabled={globalProcessing}
+                    >
+                      Decline
+                    </button>
                   </td>
                 </tr>
               ))

@@ -7,6 +7,7 @@ const WithdrawMoney = () => {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const [balance, setBalance] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const token = localStorage.getItem('token');
 
@@ -29,45 +30,46 @@ const WithdrawMoney = () => {
 
   const handleWithdraw = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
+
     setMessage('');
+    setIsSubmitting(true);
 
     const numericAmount = parseFloat(amount);
 
     if (!amount.trim()) {
       setIsError(true);
       setMessage('Amount is required.');
+      setIsSubmitting(false);
       return;
     }
 
     if (isNaN(numericAmount) || numericAmount <= 0) {
       setIsError(true);
       setMessage('Amount must be a positive number.');
+      setIsSubmitting(false);
       return;
     }
 
     if (balance === null) {
       setIsError(true);
       setMessage('Account info not loaded yet. Please try again in a few seconds.');
+      setIsSubmitting(false);
       return;
     }
 
-    if (balance !== null && numericAmount > balance) {
+    if (numericAmount > balance) {
       setIsError(true);
       setMessage('Insufficient balance.');
+      setIsSubmitting(false);
       return;
     }
 
     try {
       const response = await axios.put(
         `${api}/bank/accounts/withdraw`,
-        {
-          amount: numericAmount,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
+        { amount: numericAmount },
+        { headers: { Authorization: `Bearer ${token}` } }
       );
 
       setIsError(false);
@@ -84,6 +86,8 @@ const WithdrawMoney = () => {
 
       setIsError(true);
       setMessage(errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -102,7 +106,9 @@ const WithdrawMoney = () => {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         /><br />
-        <button type="submit">Withdraw</button>
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Withdrawing...' : 'Withdraw'}
+        </button>
       </form>
       {message && (
         <p

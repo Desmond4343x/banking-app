@@ -7,6 +7,7 @@ const DepositMoney = () => {
   const [message, setMessage] = useState('');
   const [isError, setIsError] = useState(false);
   const [balance, setBalance] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const token = localStorage.getItem('token');
 
@@ -29,25 +30,30 @@ const DepositMoney = () => {
 
   const handleDeposit = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return;
     setMessage('');
+    setIsSubmitting(true);
 
     const numericAmount = parseFloat(amount);
 
     if (!amount.trim()) {
       setIsError(true);
       setMessage('Amount is required.');
+      setIsSubmitting(false);
       return;
     }
 
     if (isNaN(numericAmount) || numericAmount <= 0) {
       setIsError(true);
       setMessage('Amount must be a positive number.');
+      setIsSubmitting(false);
       return;
     }
 
     if (balance === null) {
       setIsError(true);
       setMessage('Account info not loaded yet. Please try again in a few seconds.');
+      setIsSubmitting(false);
       return;
     }
 
@@ -67,7 +73,7 @@ const DepositMoney = () => {
       setIsError(false);
       setMessage('Deposit successful!');
       setAmount('');
-      setBalance(response.data.balance); 
+      setBalance(response.data.balance);
     } catch (error) {
       console.error('Error depositing money:', error);
 
@@ -78,6 +84,8 @@ const DepositMoney = () => {
 
       setIsError(true);
       setMessage(errorMsg);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -96,7 +104,9 @@ const DepositMoney = () => {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         /><br />
-        <button type="submit">Deposit</button>
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Depositing...' : 'Deposit'}
+        </button>
       </form>
       {message && (
         <p

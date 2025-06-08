@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+
 const api = process.env.REACT_APP_BACKEND_URL;
 
 const SendMoney = () => {
@@ -9,6 +10,7 @@ const SendMoney = () => {
   const [isError, setIsError] = useState(false);
   const [balance, setBalance] = useState(null);
   const [userAccountId, setUserAccountId] = useState(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const token = localStorage.getItem('token');
 
@@ -32,23 +34,29 @@ const SendMoney = () => {
 
   const handleSend = async (e) => {
     e.preventDefault();
+    if (isSubmitting) return; //Prevent multiple submits
+
     setMessage('');
+    setIsSubmitting(true); //Lock button
 
     if (!receiverId.trim() || !amount.trim()) {
       setIsError(true);
       setMessage('Receiver ID and amount are required.');
+      setIsSubmitting(false); //Unlock on validation fail
       return;
     }
 
     if (userAccountId === null) {
       setIsError(true);
       setMessage('Account info not loaded yet. Please try again in a few seconds.');
+      setIsSubmitting(false);
       return;
     }
 
     if (parseInt(receiverId) === userAccountId) {
       setIsError(true);
       setMessage('You cannot send money to your own account.');
+      setIsSubmitting(false);
       return;
     }
 
@@ -57,12 +65,14 @@ const SendMoney = () => {
     if (isNaN(numericAmount) || numericAmount <= 0) {
       setIsError(true);
       setMessage('Amount must be a positive number.');
+      setIsSubmitting(false);
       return;
     }
 
     if (balance !== null && numericAmount > balance) {
       setIsError(true);
       setMessage('Insufficient balance.');
+      setIsSubmitting(false);
       return;
     }
 
@@ -84,7 +94,7 @@ const SendMoney = () => {
       setMessage('Money sent successfully!');
       setReceiverId('');
       setAmount('');
-      setBalance(response.data.balance); 
+      setBalance(response.data.balance);
     } catch (error) {
       console.error('Error sending money:', error);
 
@@ -95,6 +105,8 @@ const SendMoney = () => {
 
       setIsError(true);
       setMessage(errorMsg);
+    } finally {
+      setIsSubmitting(false); //re-enable button
     }
   };
 
@@ -119,7 +131,9 @@ const SendMoney = () => {
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         /><br />
-        <button type="submit">Send</button>
+        <button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Sending...' : 'Send'}
+        </button>
       </form>
       {message && (
         <p
